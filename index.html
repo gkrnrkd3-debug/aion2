@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>아이온2 숙제</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold:#c9a84c; --gold-dim:rgba(201,168,76,0.2);
+    --blue:#4a9edd; --purple:#a06af0;
+    --green:#4ecf7a; --red:#e05555;
+    --bg:#0a0d14; --card:#141d2e; --card2:#1a2438; --panel:#0f1520;
+    --text:#d4c5a0; --bright:#f0e8cc; --muted:#6a7a90;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;
+    background-image:radial-gradient(ellipse at 20% 0%,rgba(74,158,221,0.07) 0%,transparent 50%),
+      radial-gradient(ellipse at 80% 100%,rgba(201,168,76,0.05) 0%,transparent 50%);}
+
+  /* SYNC STATUS */
+  .sync-bar{background:rgba(10,13,20,0.9);border-bottom:1px solid rgba(255,255,255,0.04);
+    padding:4px 20px;display:flex;align-items:center;justify-content:flex-end;gap:6px;}
+  .sync-dot{width:6px;height:6px;border-radius:50%;background:var(--muted);}
+  .sync-dot.online{background:var(--green);box-shadow:0 0 5px var(--green);}
+  .sync-dot.syncing{background:var(--gold);box-shadow:0 0 5px var(--gold);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+  .sync-label{font-size:10px;color:var(--muted);}
+
+  .header{background:rgba(15,21,32,0.97);border-bottom:1px solid var(--gold-dim);
+    padding:0 20px;position:sticky;top:0;z-index:200;backdrop-filter:blur(10px);}
+  .header-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:54px;}
+  .logo{display:flex;align-items:center;gap:10px;}
+  .logo-icon{width:28px;height:28px;background:linear-gradient(135deg,#8a6a20,#f0d080);
+    clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;font-size:12px;}
+  .logo-text{font-family:'Cinzel',serif;font-size:15px;font-weight:700;color:var(--gold);letter-spacing:2px;}
+  .logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;}
+  .header-date{font-size:11px;color:var(--muted);text-align:right;line-height:1.6;}
+  .header-date span{color:var(--gold);}
+
+  .acc-tab-bar{background:rgba(10,13,20,0.95);border-bottom:1px solid rgba(255,255,255,0.05);
+    padding:0 20px;position:sticky;top:54px;z-index:190;}
+  .acc-tab-inner{max-width:800px;margin:0 auto;display:flex;gap:3px;padding:7px 0;overflow-x:auto;}
+  .acc-tab-inner::-webkit-scrollbar{display:none;}
+  .acc-tab{flex-shrink:0;padding:7px 12px;background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.06);border-radius:8px;
+    color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;
+    cursor:pointer;transition:all 0.2s;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:68px;}
+  .acc-tab:hover{background:var(--card2);color:var(--text);}
+  .acc-tab.active{background:var(--card2);color:var(--bright);border-color:var(--gold-dim);}
+  .acc-tab.total-tab{min-width:60px;}
+  .acc-tab.total-tab.active{border-color:rgba(201,168,76,0.5);color:var(--gold);}
+  .acc-prog{font-size:10px;color:var(--muted);font-weight:400;}
+  .acc-tab.active .acc-prog{color:var(--gold);}
+
+  .char-tab-bar{background:rgba(12,16,26,0.95);border-bottom:1px solid rgba(255,255,255,0.04);
+    padding:0 20px;position:sticky;top:108px;z-index:180;}
+  .char-tab-inner{max-width:800px;margin:0 auto;display:flex;gap:3px;padding:6px 0;overflow-x:auto;align-items:center;min-height:42px;}
+  .char-tab-inner::-webkit-scrollbar{display:none;}
+  .char-tab{flex-shrink:0;padding:5px 12px;background:rgba(255,255,255,0.02);
+    border:1px solid rgba(255,255,255,0.05);border-radius:6px;
+    color:var(--muted);font-family:inherit;font-size:12px;font-weight:500;
+    cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;}
+  .char-tab:hover{color:var(--text);background:rgba(255,255,255,0.05);}
+  .char-tab.active{background:rgba(74,158,221,0.1);color:var(--blue);border-color:rgba(74,158,221,0.25);}
+  .char-done{font-size:10px;opacity:0.7;}
+  .add-char-btn{flex-shrink:0;padding:5px 10px;background:none;
+    border:1px dashed rgba(255,255,255,0.12);border-radius:6px;
+    color:var(--muted);font-family:inherit;font-size:12px;cursor:pointer;transition:all 0.2s;}
+  .add-char-btn:hover{color:var(--green);border-color:rgba(78,207,122,0.3);}
+
+  .main{max-width:800px;margin:0 auto;padding:16px 16px 60px;}
+
+  .top-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0 14px;gap:8px;flex-wrap:wrap;}
+  .name-input{background:none;border:none;outline:none;
+    font-family:'Cinzel',serif;font-size:14px;font-weight:700;
+    color:var(--gold);letter-spacing:1px;cursor:text;
+    border-bottom:1px dashed transparent;padding:2px 4px;transition:border-color 0.2s;}
+  .name-input:focus{border-bottom-color:var(--gold-dim);}
+  .char-name-input{font-family:'Noto Sans KR',sans-serif;font-size:13px;color:var(--blue);letter-spacing:0;}
+  .top-btns{display:flex;gap:6px;margin-left:auto;}
+  .sm-btn{font-size:11px;color:var(--muted);background:none;
+    border:1px solid rgba(255,255,255,0.07);border-radius:5px;
+    padding:4px 10px;cursor:pointer;font-family:inherit;transition:all 0.2s;white-space:nowrap;}
+  .sm-btn:hover{color:var(--red);border-color:rgba(224,85,85,0.3);}
+
+  .section-header{display:flex;align-items:center;justify-content:space-between;padding:16px 0 9px;}
+  .section-label{font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+    color:var(--muted);display:flex;align-items:center;gap:7px;}
+  .dot{width:5px;height:5px;border-radius:50%;}
+  .dot-blue{background:var(--blue);box-shadow:0 0 5px var(--blue);}
+  .dot-gold{background:var(--gold);box-shadow:0 0 5px var(--gold);}
+  .reset-btn{font-size:11px;color:var(--muted);background:none;
+    border:1px solid rgba(255,255,255,0.07);border-radius:5px;
+    padding:3px 10px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+  .reset-btn:hover{color:var(--red);border-color:rgba(224,85,85,0.3);}
+
+  .task-list{display:flex;flex-direction:column;gap:5px;}
+  .task-item{background:var(--card);border:1px solid rgba(255,255,255,0.055);
+    border-radius:9px;display:flex;align-items:center;gap:12px;
+    padding:11px 14px;cursor:pointer;transition:all 0.15s ease;position:relative;user-select:none;}
+  .task-item:hover{background:var(--card2);transform:translateX(2px);}
+  .task-item.done{opacity:0.45;border-color:rgba(78,207,122,0.1);}
+  .task-item.done::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--green);border-radius:9px 0 0 9px;}
+  .check{width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);
+    flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.2s;}
+  .task-item.done .check{background:var(--green);border-color:var(--green);color:#fff;}
+  .task-info{flex:1;min-width:0;}
+  .task-name{font-size:13px;font-weight:500;color:var(--bright);}
+  .task-item.done .task-name{text-decoration:line-through;color:var(--muted);}
+  .task-desc{font-size:11px;color:var(--muted);margin-top:2px;}
+  .task-count{font-size:11px;color:var(--muted);background:rgba(255,255,255,0.05);
+    border-radius:5px;padding:2px 8px;white-space:nowrap;flex-shrink:0;}
+
+  .energy-item{cursor:default !important;overflow:visible !important;}
+  .energy-item:hover{transform:none !important;}
+  .energy-bar-wrap{flex:1;min-width:0;}
+  .energy-label-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+  .energy-name{font-size:13px;font-weight:500;color:var(--bright);}
+  .energy-desc{font-size:11px;color:var(--muted);}
+  .energy-val{font-size:13px;font-weight:700;color:var(--gold);white-space:nowrap;}
+  .energy-track{height:6px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+  .energy-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#4a9edd,#c9a84c);transition:width 0.3s ease;}
+  .energy-slider{width:100%;display:block;margin:8px 0 4px;accent-color:var(--gold);cursor:pointer;height:20px;}
+  .energy-btns{display:flex;gap:6px;margin-top:4px;}
+  .energy-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+    border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;padding:4px 10px;cursor:pointer;transition:all 0.15s;}
+  .energy-btn.plus{color:var(--gold);border-color:rgba(201,168,76,0.3);}
+  .energy-btn.plus:hover{background:rgba(201,168,76,0.1);}
+  .energy-btn.minus{color:var(--muted);}
+  .energy-btn.full{color:var(--green);border-color:rgba(78,207,122,0.3);}
+  .energy-btn.full:hover{background:rgba(78,207,122,0.08);}
+  .energy-btn.reset-e{color:var(--muted);margin-left:auto;}
+  .divider{height:1px;background:rgba(255,255,255,0.05);margin:4px 0;}
+
+  /* TOTAL VIEW */
+  .total-acc-block{margin-bottom:20px;}
+  .total-acc-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);
+    letter-spacing:1px;padding:12px 0 8px;border-bottom:1px solid var(--gold-dim);margin-bottom:6px;
+    display:flex;align-items:center;justify-content:space-between;}
+  .total-acc-title .acc-total-prog{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;}
+  .icon-char-row{display:flex;align-items:center;gap:8px;padding:6px 10px;
+    background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:8px;margin-bottom:4px;}
+  .icon-char-name{font-size:11px;color:var(--blue);font-weight:600;
+    width:64px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .icon-tasks{display:flex;gap:3px;align-items:center;flex:1;}
+  .icon-sep{width:1px;height:16px;background:rgba(255,255,255,0.08);margin:0 2px;flex-shrink:0;}
+  .icon-task{width:26px;height:26px;border-radius:5px;
+    border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);
+    display:flex;align-items:center;justify-content:center;
+    font-size:12px;cursor:pointer;transition:all 0.15s;position:relative;flex-shrink:0;user-select:none;}
+  .icon-task:hover{background:rgba(255,255,255,0.08);border-color:rgba(255,255,255,0.25);}
+  .icon-task.done{background:rgba(78,207,122,0.1);border-color:rgba(78,207,122,0.35);}
+  .icon-task.done::after{content:'✓';position:absolute;bottom:-2px;right:0px;font-size:8px;color:var(--green);font-weight:900;line-height:1;}
+  .icon-task.weekly{border-color:rgba(201,168,76,0.18);}
+  .icon-task.weekly.done{background:rgba(201,168,76,0.1);border-color:rgba(201,168,76,0.4);}
+  .icon-task.weekly.done::after{color:var(--gold);}
+  .icon-energy{font-size:10px;font-weight:700;color:var(--gold);
+    width:34px;height:26px;border-radius:5px;
+    border:1px solid rgba(201,168,76,0.2);background:rgba(201,168,76,0.05);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .total-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;
+    padding:8px 10px;background:rgba(255,255,255,0.02);border-radius:7px;}
+  .total-legend span{font-size:10px;color:var(--muted);}
+
+  .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
+  .notes-label{font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
+  textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);
+    border-radius:7px;padding:9px 11px;color:var(--text);font-family:inherit;
+    font-size:13px;resize:vertical;min-height:56px;outline:none;transition:border-color 0.2s;}
+  textarea:focus{border-color:var(--gold-dim);}
+
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);
+    background:var(--card2);border:1px solid rgba(78,207,122,0.3);color:var(--green);
+    padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;
+    transition:transform 0.25s ease;z-index:999;white-space:nowrap;pointer-events:none;}
+  .toast.show{transform:translateX(-50%) translateY(0);}
+
+  .loading-screen{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:12px;z-index:9999;}
+  .loading-icon{font-size:32px;animation:spin 1.5s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{font-size:13px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="loading-screen" id="loading">
+  <div class="loading-icon">⚔️</div>
+  <div class="loading-text">데이터 불러오는 중...</div>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span class="sync-label" id="sync-label">연결 중...</span>
+</div>
+
+<header class="header">
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">⚔️</div>
+      <div>
+        <div class="logo-text">AION II</div>
+        <div class="logo-sub">숙제 체크리스트</div>
+      </div>
+    </div>
+    <div class="header-date">
+      <div id="today-date">--</div>
+      <div>주간 리셋 <span>수요일 05:00</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="acc-tab-bar"><div class="acc-tab-inner" id="acc-tabs"></div></div>
+<div class="char-tab-bar"><div class="char-tab-inner" id="char-tabs"></div></div>
+<main class="main" id="main-content"></main>
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCmbUxkL2_0XgpIXgcIGOGsHK5Q3IykeGg",
+  authDomain: "aion2-9469f.firebaseapp.com",
+  databaseURL: "https://aion2-9469f-default-rtdb.firebaseio.com",
+  projectId: "aion2-9469f",
+  storageBucket: "aion2-9469f.firebasestorage.app",
+  messagingSenderId: "654830276839",
+  appId: "1:654830276839:web:3d5967cb9d7934cd2ed242"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const DB_KEY = 'aion2';
+
+const TASKS = {
+  daily: [
+    { id:'dr1', name:'사명 임무', desc:'일일 퀘스트 — 오드 에너지 100% 보상 위주', count:'5회/일' },
+    { id:'dr2', name:'어비스 회랑', desc:'화·목·토 21:00 초기화', count:'최대 3회' },
+    { id:'dr4', name:'오드에너지', desc:'00시 기준 3시간마다 +15 자동충전', count:'최대 840', type:'energy' },
+    { id:'dr5', name:'악몽 던전', desc:'몽환의 파편 획득 — 매일 2회 충전, 최대 14회', count:'2회/일' },
+  ],
+  weekly: [
+    { id:'wd1', name:'각성전', desc:'주간 3회', count:'3회/주' },
+    { id:'wd2', name:'토벌전', desc:'주간 총합 3회', count:'3회/주' },
+    { id:'wd4', name:'오드에너지 구매', desc:'주간', count:'주간' },
+  ],
+};
+const DAILY_IDS = TASKS.daily.filter(t=>!t.type).map(t=>t.id);
+const WEEKLY_IDS = TASKS.weekly.map(t=>t.id);
+const ALL_IDS = [...DAILY_IDS,...WEEKLY_IDS];
+const TOTAL = ALL_IDS.length;
+
+let data = { accounts:[], savedAt:null };
+let curAcc = -1;
+let curChar = 0;
+let saveTimer = null;
+let isRemoteUpdate = false;
+
+/* ---- 동기화 상태 UI ---- */
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const label = document.getElementById('sync-label');
+  dot.className = 'sync-dot ' + status;
+  if (status==='online') label.textContent = '실시간 동기화 중';
+  else if (status==='syncing') label.textContent = '저장 중...';
+  else label.textContent = '연결 중...';
+}
+
+/* ---- 에너지 자동충전 ---- */
+function calcEnergyCharge(stored, lastSavedMs) {
+  if (!lastSavedMs) return stored;
+  const from = new Date(lastSavedMs), to = new Date();
+  function slotIdx(d) { const day=new Date(d); day.setHours(0,0,0,0); return Math.floor((d-day)/(3*3600000)); }
+  const fromDay=new Date(from); fromDay.setHours(0,0,0,0);
+  const toDay=new Date(to); toDay.setHours(0,0,0,0);
+  const dayDiff=Math.round((toDay-fromDay)/86400000);
+  let slots=dayDiff===0?slotIdx(to)-slotIdx(from):(8-slotIdx(from))+(dayDiff-1)*8+slotIdx(to);
+  return Math.min(840, stored+Math.max(0,slots)*15);
+}
+
+/* ---- Firebase 저장 (debounce 1초) ---- */
+function save() {
+  setSyncStatus('syncing');
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    data.savedAt = Date.now();
+    await set(ref(db, DB_KEY), data);
+    setSyncStatus('online');
+  }, 1000);
+}
+
+/* ---- 자동 리셋 ---- */
+function autoReset() {
+  const now = new Date();
+  const todayKey = now.toDateString();
+  const lsDay = localStorage.getItem('aion2-day');
+  if (lsDay !== todayKey) {
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>
+      DAILY_IDS.filter(id=>id!=='dr2').forEach(id=>{ch.state[id]=false;})
+    ));
+    localStorage.setItem('aion2-day', todayKey);
+  }
+  function getLastAbyssReset(n){for(let b=0;b<=7;b++){const d=new Date(n);d.setDate(d.getDate()-b);d.setHours(21,0,0,0);if([2,4,6].includes(d.getDay())&&d<=n)return d;}}
+  const abyssKey=(getLastAbyssReset(now)||new Date(0)).toISOString();
+  if (localStorage.getItem('aion2-abyss')!==abyssKey) {
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
+    localStorage.setItem('aion2-abyss', abyssKey);
+  }
+  const wed=new Date(now); wed.setDate(now.getDate()-((now.getDay()+4)%7)); wed.setHours(5,0,0,0);
+  const weekKey=wed.toDateString();
+  if (localStorage.getItem('aion2-week')!==weekKey) {
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
+    localStorage.setItem('aion2-week', weekKey);
+  }
+}
+
+function applyEnergyCharge(d) {
+  const lastSaved = d.savedAt||null;
+  d.accounts.forEach(acc=>acc.chars.forEach(ch=>{
+    if (ch.state&&ch.state['__energy']!==undefined)
+      ch.state['__energy']=calcEnergyCharge(ch.state['__energy'], lastSaved);
+  }));
+}
+
+function ensureDefaults(d) {
+  if (!d.accounts||d.accounts.length===0) {
+    d.accounts = Array.from({length:5},(_,i)=>({
+      name:'계정'+(i+1), chars:[{name:'캐릭터1',state:{},notes:''}]
+    }));
+  }
+}
+
+/* ---- 헬퍼 ---- */
+function getChar() { return data.accounts[curAcc].chars[curChar]; }
+function getProgress(ch) { return ALL_IDS.filter(id=>ch.state&&ch.state[id]).length; }
+
+/* ---- 탭 렌더 ---- */
+function renderAccTabs() {
+  const el=document.getElementById('acc-tabs'); el.innerHTML='';
+  const allDone=data.accounts.reduce((s,acc)=>s+acc.chars.reduce((s2,ch)=>s2+getProgress(ch),0),0);
+  const allMax=data.accounts.reduce((s,acc)=>s+acc.chars.length*TOTAL,0);
+  const tb=document.createElement('button');
+  tb.className='acc-tab total-tab'+(curAcc===-1?' active':'');
+  tb.innerHTML=`<span>📋 전체</span><span class="acc-prog">${allDone}/${allMax}</span>`;
+  tb.onclick=()=>{curAcc=-1;render();};
+  el.appendChild(tb);
+  data.accounts.forEach((acc,i)=>{
+    const done=acc.chars.reduce((s,ch)=>s+getProgress(ch),0);
+    const max=acc.chars.length*TOTAL;
+    const btn=document.createElement('button');
+    btn.className='acc-tab'+(i===curAcc?' active':'');
+    btn.innerHTML=`<span>${acc.name}</span><span class="acc-prog">${done}/${max}</span>`;
+    btn.onclick=()=>{curAcc=i;curChar=0;render();};
+    el.appendChild(btn);
+  });
+}
+
+function renderCharTabs() {
+  const el=document.getElementById('char-tabs'); el.innerHTML='';
+  if (curAcc===-1){el.innerHTML='<span style="font-size:11px;color:var(--muted);padding:0 4px;">전체 계정 · 캐릭터 현황</span>';return;}
+  const acc=data.accounts[curAcc];
+  acc.chars.forEach((ch,i)=>{
+    const done=getProgress(ch);
+    const btn=document.createElement('button');
+    btn.className='char-tab'+(i===curChar?' active':'');
+    btn.innerHTML=`${ch.name} <span class="char-done">${done}/${TOTAL}</span>`;
+    btn.onclick=()=>{curChar=i;render();};
+    el.appendChild(btn);
+  });
+  const add=document.createElement('button');
+  add.className='add-char-btn'; add.textContent='+ 캐릭터 추가';
+  add.onclick=addChar; el.appendChild(add);
+}
+
+function renderTotalView() {
+  const main=document.getElementById('main-content');
+  let html='';
+  data.accounts.forEach((acc,ai)=>{
+    const accDone=acc.chars.reduce((s,ch)=>s+getProgress(ch),0);
+    const accMax=acc.chars.length*TOTAL;
+    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><span class="acc-total-prog">${accDone}/${accMax}</span></div>`;
+    acc.chars.forEach((ch,ci)=>{
+      const energy=(ch.state&&ch.state['__energy'])||0;
+      const dailyIcons=TASKS.daily.map(task=>{
+        if(task.type==='energy') return `<div class="icon-energy" title="오드에너지 ${energy}/840">${energy>=840?'MAX':energy}</div>`;
+        const done=!!(ch.state&&ch.state[task.id]);
+        const icons={dr1:'📜',dr2:'🌀',dr5:'💀'};
+        return `<div class="icon-task${done?' done':''}" title="${task.name}" onclick="window._totalToggle(${ai},${ci},'${task.id}')">${icons[task.id]||'•'}</div>`;
+      }).join('');
+      const weeklyIcons=TASKS.weekly.map(task=>{
+        const done=!!(ch.state&&ch.state[task.id]);
+        const icons={wd1:'⚔️',wd2:'⚡',wd4:'🛒'};
+        return `<div class="icon-task weekly${done?' done':''}" title="${task.name}" onclick="window._totalToggle(${ai},${ci},'${task.id}')">${icons[task.id]||'•'}</div>`;
+      }).join('');
+      html+=`<div class="icon-char-row"><span class="icon-char-name" title="${ch.name}">${ch.name}</span><div class="icon-tasks">${dailyIcons}<div class="icon-sep"></div>${weeklyIcons}</div></div>`;
+    });
+    html+=`</div>`;
+  });
+  html+=`<div class="total-legend"><span>일일 ▶ 📜사명임무 🌀어비스회랑 💀악몽던전 에너지수치</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간 ▶ ⚔️각성전 ⚡토벌전 🛒에너지구매</span></div>`;
+  main.innerHTML=html;
+}
+
+function renderCharView() {
+  const acc=data.accounts[curAcc], ch=acc.chars[curChar];
+  const main=document.getElementById('main-content');
+  const delBtn=acc.chars.length>1?`<button class="sm-btn" onclick="window._deleteChar()">캐릭터 삭제</button>`:'';
+  main.innerHTML=`
+    <div class="top-row">
+      <input class="name-input" id="acc-name-input" type="text" maxlength="10" value="${acc.name}" placeholder="계정명"/>
+      <input class="name-input char-name-input" id="char-name-input" type="text" maxlength="10" value="${ch.name}" placeholder="캐릭터명"/>
+      <div class="top-btns">${delBtn}<button class="sm-btn" onclick="window._resetAll()">전체 초기화</button></div>
+    </div>
+    <div class="section-header">
+      <div class="section-label"><span class="dot dot-blue"></span> 일일 숙제</div>
+      <button class="reset-btn" onclick="window._resetGroup('daily')">초기화</button>
+    </div>
+    <div class="task-list" id="list-daily"></div>
+    <div class="divider" style="margin-top:16px"></div>
+    <div class="section-header">
+      <div class="section-label"><span class="dot dot-gold"></span> 주간 던전</div>
+      <button class="reset-btn" onclick="window._resetGroup('weekly')">초기화</button>
+    </div>
+    <div class="task-list" id="list-weekly"></div>
+    <div class="notes-section">
+      <div class="notes-label">📝 메모</div>
+      <textarea id="notes" placeholder="이 캐릭터 메모...">${ch.notes||''}</textarea>
+    </div>`;
+  document.getElementById('acc-name-input').addEventListener('input',e=>{data.accounts[curAcc].name=e.target.value||('계정'+(curAcc+1));save();renderAccTabs();});
+  document.getElementById('char-name-input').addEventListener('input',e=>{getChar().name=e.target.value||('캐릭터'+(curChar+1));save();renderCharTabs();});
+  document.getElementById('notes').addEventListener('input',e=>{getChar().notes=e.target.value;save();});
+  renderTaskList('daily'); renderTaskList('weekly');
+}
+
+function renderTaskList(group) {
+  const el=document.getElementById('list-'+group); if(!el)return;
+  const ch=getChar(); el.innerHTML='';
+  TASKS[group].forEach(task=>{
+    const div=document.createElement('div');
+    if(task.type==='energy'){
+      const energy=(ch.state&&ch.state['__energy'])||0;
+      const pct=Math.round(energy/840*100);
+      div.className='task-item energy-item';
+      div.innerHTML=`<div class="energy-bar-wrap">
+        <div class="energy-label-row">
+          <div><div class="energy-name">⚡ ${task.name}</div><div class="energy-desc">${task.desc}</div></div>
+          <div class="energy-val">${energy} / 840</div>
+        </div>
+        <div class="energy-track"><div class="energy-fill" style="width:${pct}%"></div></div>
+        <input class="energy-slider" type="range" min="0" max="840" step="10" value="${energy}" oninput="window._setEnergy(parseInt(this.value))">
+        <div class="energy-btns">
+          <button class="energy-btn minus" onclick="window._adjustEnergy(-120)">−120</button>
+          <button class="energy-btn plus" onclick="window._adjustEnergy(120)">+120</button>
+          <button class="energy-btn full" onclick="window._setEnergy(840)">MAX</button>
+          <button class="energy-btn reset-e" onclick="window._setEnergy(0)">초기화</button>
+        </div></div>`;
+    } else {
+      const done=!!(ch.state&&ch.state[task.id]);
+      div.className='task-item'+(done?' done':'');
+      div.onclick=()=>toggle(task.id);
+      div.innerHTML=`<div class="check">${done?'✓':''}</div>
+        <div class="task-info"><div class="task-name">${task.name}</div><div class="task-desc">${task.desc}</div></div>
+        <div class="task-count">${task.count}</div>`;
+    }
+    el.appendChild(div);
+  });
+}
+
+function render() { renderAccTabs(); renderCharTabs(); if(curAcc===-1) renderTotalView(); else renderCharView(); }
+
+/* ---- 액션 ---- */
+function toggle(id) {
+  const ch=getChar(); if(!ch.state)ch.state={};
+  ch.state[id]=!ch.state[id]; save(); render();
+  if(ch.state[id]) showToast('✓ 완료!');
+}
+window._totalToggle=(ai,ci,id)=>{
+  const ch=data.accounts[ai].chars[ci]; if(!ch.state)ch.state={};
+  ch.state[id]=!ch.state[id]; save(); renderTotalView(); renderAccTabs();
+  if(ch.state[id]) showToast('✓ 완료!');
+};
+window._resetGroup=(group)=>{
+  const ch=getChar(); TASKS[group].forEach(t=>{if(!t.type)ch.state[t.id]=false;});
+  save(); render(); showToast('초기화 완료');
+};
+window._resetAll=()=>{
+  const ch=getChar(); ALL_IDS.forEach(id=>{ch.state[id]=false;});
+  save(); render(); showToast('전체 초기화');
+};
+window._adjustEnergy=(delta)=>{
+  const ch=getChar(); if(!ch.state)ch.state={};
+  ch.state['__energy']=Math.max(0,Math.min(840,(ch.state['__energy']||0)+delta));
+  save(); render();
+};
+window._setEnergy=(val)=>{const ch=getChar();if(!ch.state)ch.state={};ch.state['__energy']=val;save();render();};
+function addChar(){
+  const acc=data.accounts[curAcc];
+  acc.chars.push({name:'캐릭터'+(acc.chars.length+1),state:{},notes:''});
+  curChar=acc.chars.length-1; save(); render(); showToast('캐릭터 추가됨');
+}
+window._deleteChar=()=>{
+  const acc=data.accounts[curAcc]; if(acc.chars.length<=1)return;
+  acc.chars.splice(curChar,1); curChar=Math.max(0,curChar-1);
+  save(); render(); showToast('캐릭터 삭제됨');
+};
+function showToast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),1600);
+}
+
+/* ---- Firebase 실시간 연동 ---- */
+const dbRef = ref(db, DB_KEY);
+
+// 첫 로드
+get(dbRef).then(snapshot=>{
+  if (snapshot.exists()) {
+    data = snapshot.val();
+    applyEnergyCharge(data);
+    ensureDefaults(data);
+  } else {
+    ensureDefaults(data);
+  }
+  autoReset();
+  render();
+  document.getElementById('loading').style.display='none';
+  setSyncStatus('online');
+
+  // 실시간 리스너 (다른 기기에서 변경 감지)
+  onValue(dbRef, snapshot=>{
+    if (snapshot.exists()) {
+      const remote = snapshot.val();
+      // 저장 중인 내 데이터와 충돌 방지: savedAt 비교
+      if (!data.savedAt || (remote.savedAt && remote.savedAt > data.savedAt + 2000)) {
+        data = remote;
+        applyEnergyCharge(data);
+        ensureDefaults(data);
+        render();
+        showToast('🔄 다른 기기에서 업데이트됨');
+      }
+    }
+  });
+}).catch(()=>{
+  ensureDefaults(data);
+  autoReset();
+  render();
+  document.getElementById('loading').style.display='none';
+  setSyncStatus('');
+  showToast('⚠️ 오프라인 모드');
+});
+
+document.getElementById('today-date').textContent =
+  new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+</script>
+</body>
+</html>
