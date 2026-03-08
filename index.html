@@ -157,7 +157,6 @@ firebase.initializeApp({
   messagingSenderId:"654830276839",
   appId:"1:654830276839:web:3d5967cb9d7934cd2ed242"
 });
-const db=firebase.database();
 const DB_KEY='aion2';
 
 // 3. 주간 항목을 daily에 통합 (weekly:true 플래그)
@@ -198,8 +197,13 @@ function calcEnergyCharge(stored,lastMs){
 }
 
 function save(){
+  data.savedAt=Date.now();
+  localStorage.setItem('aion2-local',JSON.stringify(data));
   setSyncStatus('syncing');clearTimeout(saveTimer);
-  saveTimer=setTimeout(async()=>{data.savedAt=Date.now();await db.ref(DB_KEY).set(data);setSyncStatus('online');},1000);
+  saveTimer=setTimeout(async()=>{
+    try{await firebase.database().ref(DB_KEY).set(data);setSyncStatus('online');}
+    catch(e){setSyncStatus('');}
+  },1000);
 }
 
 function autoReset(){
@@ -376,26 +380,37 @@ function addChar(){const acc=data.accounts[curAcc];acc.chars.push({name:'캐릭�
 window._del=()=>{const acc=data.accounts[curAcc];if(acc.chars.length<=1)return;acc.chars.splice(curChar,1);curChar=Math.max(0,curChar-1);save();render();showToast('캐릭터 삭제됨');};
 function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600);}
 
-const dbRef=db.ref(DB_KEY);
-dbRef.once('value').then(snapshot=>{
-  if(snapshot.exists()){data=snapshot.val();applyEnergy(data);ensureDefaults(data);}
-  else ensureDefaults(data);
-  autoReset();render();
-  document.getElementById('loading').style.display='none';
-  setSyncStatus('online');
-  dbRef.on('value',snap=>{
-    if(snap.exists()){
-      const r=snap.val();
-      if(!data.savedAt||(r.savedAt&&r.savedAt>data.savedAt+2000)){
-        data=r;applyEnergy(data);ensureDefaults(data);render();showToast('🔄 다른 기기에서 업데이트됨');
-      }
+// Firebase + 타임아웃 (5초 안에 안되면 로컬로 fallback)
+function loadLocal(){
+  try{const s=localStorage.getItem('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
+  autoReset();render();document.getElementById('loading').style.display='none';setSyncStatus('');
+}
+function saveLocal(){data.savedAt=Date.now();localStorage.setItem('aion2-local',JSON.stringify(data));}
+
+let fbOk=false;
+const fbTimeout=setTimeout(()=>{if(!fbOk){console.warn('Firebase timeout, fallback to local');loadLocal();showToast('⚠️ 오프라인 모드');}},5000);
+
+try{
+  const dbRef=firebase.database().ref(DB_KEY);
+  dbRef.once('value').then(snapshot=>{
+    fbOk=true;clearTimeout(fbTimeout);
+    if(snapshot.exists()){data=snapshot.val();applyEnergy(data);ensureDefaults(data);}
+    else{
+      // 로컬에 데이터 있으면 Firebase에 올리기
+      try{const s=localStorage.getItem('aion2-local');if(s)data=JSON.parse(s);}catch(e){}
+      ensureDefaults(data);
     }
-  });
-}).catch(()=>{
-  ensureDefaults(data);autoReset();render();
-  document.getElementById('loading').style.display='none';
-  setSyncStatus('');showToast('⚠️ 오프라인 모드');
-});
+    autoReset();render();document.getElementById('loading').style.display='none';setSyncStatus('online');
+    dbRef.on('value',snap=>{
+      if(snap.exists()){
+        const r=snap.val();
+        if(!data.savedAt||(r.savedAt&&r.savedAt>data.savedAt+2000)){
+          data=r;applyEnergy(data);ensureDefaults(data);render();showToast('🔄 다른 기기에서 업데이트됨');
+        }
+      }
+    });
+  }).catch(()=>{fbOk=true;clearTimeout(fbTimeout);loadLocal();showToast('⚠️ 오프라인 모드');});
+}catch(e){clearTimeout(fbTimeout);loadLocal();}
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
 </script>
