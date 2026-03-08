@@ -145,19 +145,18 @@
 <div class="char-tab-bar"><div class="char-tab-inner" id="char-tabs"></div></div>
 <main class="main" id="main-content"></main>
 <div class="toast" id="toast"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-app.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/8.10.1/firebase-database.min.js"></script>
 <script>
-firebase.initializeApp({
-  apiKey:"AIzaSyCmbUxkL2_0XgpIXgcIGOGsHK5Q3IykeGg",
-  authDomain:"aion2-9469f.firebaseapp.com",
-  databaseURL:"https://aion2-9469f-default-rtdb.firebaseio.com",
-  projectId:"aion2-9469f",
-  storageBucket:"aion2-9469f.firebasestorage.app",
-  messagingSenderId:"654830276839",
-  appId:"1:654830276839:web:3d5967cb9d7934cd2ed242"
-});
+const DB_URL='https://aion2-9469f-default-rtdb.firebaseio.com/aion2.json';
 const DB_KEY='aion2';
+
+async function fbGet(){
+  const r=await fetch(DB_URL);
+  if(!r.ok)throw new Error('fetch fail');
+  return await r.json();
+}
+async function fbSet(data){
+  await fetch(DB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+}
 
 // 3. 주간 항목을 daily에 통합 (weekly:true 플래그)
 const TASKS=[
@@ -188,12 +187,26 @@ function setSyncStatus(s){
 function calcEnergyCharge(stored,lastMs){
   if(!lastMs)return stored;
   const from=new Date(lastMs),to=new Date();
-  function si(d){const day=new Date(d);day.setHours(0,0,0,0);return Math.floor((d-day)/(3*3600000));}
-  const fd=new Date(from);fd.setHours(0,0,0,0);
-  const td=new Date(to);td.setHours(0,0,0,0);
-  const dd=Math.round((td-fd)/86400000);
-  const slots=dd===0?si(to)-si(from):(8-si(from))+(dd-1)*8+si(to);
-  return Math.min(840,stored+Math.max(0,slots)*15);
+  if(to<=from)return stored;
+  // 00시 기준 고정 슬롯: 0,3,6,9,12,15,18,21시
+  function slotsPassed(f,t){
+    let count=0;
+    // f 이후 첫 슬롯부터 t 이전 마지막 슬롯까지 카운트
+    const cur=new Date(f);
+    cur.setMinutes(0,0,0);
+    // 다음 슬롯 시각으로 올림
+    const h=cur.getHours();
+    const nextH=Math.ceil(h/3)*3; // 3의 배수로 올림
+    cur.setHours(nextH===24?0:nextH);
+    if(nextH===24)cur.setDate(cur.getDate()+1);
+    while(cur<=t){
+      if(cur.getHours()%3===0)count++;
+      cur.setHours(cur.getHours()+3);
+    }
+    return count;
+  }
+  const slots=slotsPassed(from,to);
+  return Math.min(840,stored+slots*15);
 }
 
 function save(){
@@ -201,7 +214,7 @@ function save(){
   localStorage.setItem('aion2-local',JSON.stringify(data));
   setSyncStatus('syncing');clearTimeout(saveTimer);
   saveTimer=setTimeout(async()=>{
-    try{await firebase.database().ref(DB_KEY).set(data);setSyncStatus('online');}
+    try{await fbSet(data);setSyncStatus('online');}
     catch(e){setSyncStatus('');}
   },1000);
 }
@@ -267,7 +280,8 @@ function renderAccTabs(){
 
 function renderCharTabs(){
   const el=document.getElementById('char-tabs');el.innerHTML='';
-  if(curAcc===-1){el.innerHTML='<span style="font-size:11px;color:var(--muted);padding:0 4px;">전체 계정 · 캐릭터 현황</span>';return;}
+  if(curAcc===-1){document.querySelector('.char-tab-bar').style.display='none';return;}
+  document.querySelector('.char-tab-bar').style.display='';
   const acc=data.accounts[curAcc];
   acc.chars.forEach((ch,i)=>{
     const d=getProgress(ch);
@@ -288,7 +302,7 @@ function renderTotalView(){
     html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><span class="acc-total-prog">${ad}/${am}</span></div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
-      const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'⚡',wd4:'🛒'};
+      const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'🏰',wd4:'🛒'};
       const taskHtml=TASKS.map(t=>{
         if(t.type==='energy')return `<div class="icon-energy" title="오드에너지 ${energy}/840">${energy>=840?'MAX':energy}</div>`;
         const done=!!(ch.state&&ch.state[t.id]);
@@ -298,7 +312,7 @@ function renderTotalView(){
     });
     html+=`</div>`;
   });
-  html+=`<div class="total-legend"><span>📜사명 🌀어비스 💀악몽 ⚡에너지</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간: ⚔️각성 ⚡토벌 🛒에너지구매</span></div>`;
+  html+=`<div class="total-legend"><span>📜사명 🌀어비스 💀악몽 ⚡에너지</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간: ⚔️각성 🏰토벌 🛒에너지구매</span></div>`;
   main.innerHTML=html;
 }
 
@@ -387,30 +401,34 @@ function loadLocal(){
 }
 function saveLocal(){data.savedAt=Date.now();localStorage.setItem('aion2-local',JSON.stringify(data));}
 
+// Firebase REST API로 로드
 let fbOk=false;
-const fbTimeout=setTimeout(()=>{if(!fbOk){console.warn('Firebase timeout, fallback to local');loadLocal();showToast('⚠️ 오프라인 모드');}},5000);
+const fbTimeout=setTimeout(()=>{
+  if(!fbOk){loadLocal();showToast('⚠️ 오프라인 모드');}
+},5000);
 
-try{
-  const dbRef=firebase.database().ref(DB_KEY);
-  dbRef.once('value').then(snapshot=>{
-    fbOk=true;clearTimeout(fbTimeout);
-    if(snapshot.exists()){data=snapshot.val();applyEnergy(data);ensureDefaults(data);}
-    else{
-      // 로컬에 데이터 있으면 Firebase에 올리기
-      try{const s=localStorage.getItem('aion2-local');if(s)data=JSON.parse(s);}catch(e){}
-      ensureDefaults(data);
-    }
-    autoReset();render();document.getElementById('loading').style.display='none';setSyncStatus('online');
-    dbRef.on('value',snap=>{
-      if(snap.exists()){
-        const r=snap.val();
-        if(!data.savedAt||(r.savedAt&&r.savedAt>data.savedAt+2000)){
-          data=r;applyEnergy(data);ensureDefaults(data);render();showToast('🔄 다른 기기에서 업데이트됨');
-        }
+fbGet().then(val=>{
+  fbOk=true;clearTimeout(fbTimeout);
+  if(val){data=val;applyEnergy(data);ensureDefaults(data);}
+  else{
+    try{const s=localStorage.getItem('aion2-local');if(s)data=JSON.parse(s);}catch(e){}
+    ensureDefaults(data);
+  }
+  autoReset();render();
+  document.getElementById('loading').style.display='none';
+  setSyncStatus('online');
+  // 30초마다 폴링으로 다른 기기 변경 감지
+  setInterval(async()=>{
+    try{
+      const r=await fbGet();
+      if(r&&(!data.savedAt||(r.savedAt&&r.savedAt>data.savedAt+2000))){
+        data=r;applyEnergy(data);ensureDefaults(data);render();showToast('🔄 다른 기기에서 업데이트됨');
       }
-    });
-  }).catch(()=>{fbOk=true;clearTimeout(fbTimeout);loadLocal();showToast('⚠️ 오프라인 모드');});
-}catch(e){clearTimeout(fbTimeout);loadLocal();}
+    }catch(e){}
+  },30000);
+}).catch(()=>{
+  clearTimeout(fbTimeout);loadLocal();showToast('⚠️ 오프라인 모드');
+});
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
 </script>
