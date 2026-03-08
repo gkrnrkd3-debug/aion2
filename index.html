@@ -304,7 +304,7 @@ function renderTotalView(){
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'🏰',wd4:'🛒'};
       const taskHtml=TASKS.map(t=>{
-        if(t.type==='energy')return `<div class="icon-energy" title="오드에너지 ${energy}/840">${energy>=840?'MAX':energy}</div>`;
+        if(t.type==='energy')return `<div class="icon-energy" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;
         const done=!!(ch.state&&ch.state[t.id]);
         return `<div class="icon-task${done?' done':''}" title="${t.name}" onclick="window._tt(${ai},${ci},'${t.id}')">${icons[t.id]||'•'}</div>`;
       }).join('');
@@ -386,6 +386,21 @@ function render(){renderAccTabs();renderCharTabs();if(curAcc===-1)renderTotalVie
 
 function toggle(id){const ch=getChar();if(!ch.state)ch.state={};ch.state[id]=!ch.state[id];save();render();if(ch.state[id])showToast('✓ 완료!');}
 window._tt=(ai,ci,id)=>{const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};ch.state[id]=!ch.state[id];save();renderTotalView();renderAccTabs();if(ch.state[id])showToast('✓ 완료!');};
+window._editEnergy=(ai,ci,el)=>{
+  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
+  const cur=(ch.state['__energy']||0);
+  const input=document.createElement('input');
+  input.type='number';input.min=0;input.max=840;input.value=cur;
+  input.style.cssText='width:36px;background:#0a0d14;border:1px solid var(--gold);border-radius:4px;color:var(--gold);font-size:9px;font-weight:700;text-align:center;padding:2px;outline:none;';
+  el.replaceWith(input);
+  input.focus();input.select();
+  function confirm(){
+    const v=Math.max(0,Math.min(840,parseInt(input.value)||0));
+    ch.state['__energy']=v;save();renderTotalView();renderAccTabs();
+  }
+  input.addEventListener('blur',confirm);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')renderTotalView();});
+};
 window._rg=()=>{const ch=getChar();TASKS.forEach(t=>{if(!t.type)ch.state[t.id]=false;});save();render();showToast('초기화 완료');};
 window._ra=()=>{const ch=getChar();ALL_IDS.forEach(id=>{ch.state[id]=false;});save();render();showToast('전체 초기화');};
 window._ae=(d)=>{const ch=getChar();if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,(ch.state['__energy']||0)+d));save();render();};
