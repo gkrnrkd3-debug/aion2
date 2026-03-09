@@ -150,9 +150,14 @@ const DB_URL='https://aion2-9469f-default-rtdb.firebaseio.com/aion2.json';
 const DB_KEY='aion2';
 
 async function fbGet(){
-  const r=await fetch(DB_URL);
-  if(!r.ok)throw new Error('fetch fail');
-  return await r.json();
+  const controller=new AbortController();
+  const tid=setTimeout(()=>controller.abort(),3000);
+  try{
+    const r=await fetch(DB_URL,{signal:controller.signal});
+    clearTimeout(tid);
+    if(!r.ok)throw new Error('fetch fail');
+    return await r.json();
+  }catch(e){clearTimeout(tid);throw e;}
 }
 async function fbSet(data){
   await fetch(DB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
@@ -420,7 +425,7 @@ function saveLocal(){data.savedAt=Date.now();localStorage.setItem('aion2-local',
 let fbOk=false;
 const fbTimeout=setTimeout(()=>{
   if(!fbOk){loadLocal();showToast('⚠️ 오프라인 모드');}
-},5000);
+},3000);
 
 fbGet().then(val=>{
   fbOk=true;clearTimeout(fbTimeout);
