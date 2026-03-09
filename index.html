@@ -476,7 +476,7 @@ function toggleMemo(){
   } else {
     mainEl.style.display='';
     accBar.style.display='';
-    charBar.style.display='';
+    charBar.style.display=curAcc===-1?'none':'';
     memoEl.style.display='none';
     btn.style.borderColor='rgba(255,255,255,0.1)';
     btn.querySelector('span:last-child').style.color='var(--muted)';
@@ -521,6 +521,13 @@ function deleteMemoTab(){
 document.getElementById('memo-title-input').addEventListener('input',()=>{saveCurMemo();renderMemoTabs();});
 document.getElementById('memo-content').addEventListener('input',()=>{saveCurMemo();});
 loadMemos();
+
+// 서비스워커 + 캐시 완전 삭제
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister()));
+  caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
+}
+
 try{const s=localStorage.getItem('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
 autoReset();render();
 document.getElementById('loading').style.display='none';
