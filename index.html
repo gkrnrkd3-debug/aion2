@@ -265,8 +265,11 @@ function autoReset(){
   if(now.getHours()<5)base.setDate(base.getDate()-1);
   base.setHours(5,0,0,0);
   const dayKey=base.getFullYear()+'-'+(base.getMonth()+1)+'-'+base.getDate()+'_05';
-  if(lsGet('aion2-day')!==dayKey){
-    data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr1','dr5'].forEach(id=>{ch.state[id]=false;})));
+  const savedDay=lsGet('aion2-day');
+  if(savedDay!==dayKey){
+    if(savedDay!==null){
+      data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr1','dr5'].forEach(id=>{ch.state[id]=false;})));
+    }
     lsSet('aion2-day',dayKey);
   }
   // 어비스 회랑: 화목토 21:00
@@ -274,18 +277,33 @@ function autoReset(){
   }
   const la=lastAbyss(now)||new Date(0);
   const ak=la.getFullYear()+'-'+(la.getMonth()+1)+'-'+la.getDate()+'_21abyss';
-  if(lsGet('aion2-abyss')!==ak){
-    data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
+  const savedAk=lsGet('aion2-abyss');
+  if(savedAk!==ak){
+    if(savedAk!==null){
+      data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
+    }
     lsSet('aion2-abyss',ak);
   }
-  // 주간: 수요일 05:00 초기화
-  const w=new Date(now);
-  let dw=now.getDay()>=3?now.getDay()-3:now.getDay()+4;
-  w.setDate(now.getDate()-dw);w.setHours(5,0,0,0);
-  if(w>now)w.setDate(w.getDate()-7);
-  const wk=w.getFullYear()+'-'+(w.getMonth()+1)+'-'+w.getDate()+'_wed05';
-  if(lsGet('aion2-week')!==wk){
-    data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
+  // 주간: 수요일 05:00 초기화 (로컬 시간 기준)
+  function getLastWedReset(n){
+    // 가장 최근 수요일 05:00 (로컬시간)
+    const d=new Date(n);
+    // 수요일=3, 현재 요일에서 수요일까지 며칠 전인지
+    let diff=(d.getDay()+7-3)%7; // 0이면 오늘이 수요일
+    d.setDate(d.getDate()-diff);
+    d.setHours(5,0,0,0);
+    if(d>n) d.setDate(d.getDate()-7); // 아직 이번주 수 05:00 안 지났으면 지난주
+    return d;
+  }
+  const lastWed=getLastWedReset(now);
+  const wk=lastWed.getFullYear()+'-'+(lastWed.getMonth()+1)+'-'+lastWed.getDate()+'_wed05';
+  const savedWk=lsGet('aion2-week');
+  // savedWk가 없거나, 저장된 키가 현재 계산된 키보다 이전 주인 경우에만 초기화
+  if(savedWk!==wk){
+    // savedWk가 존재하고 같은 포맷이면 실제로 주가 바뀐 것, 없으면 첫 실행이므로 초기화 안 함
+    if(savedWk!==null){
+      data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
+    }
     lsSet('aion2-week',wk);
   }
 }
