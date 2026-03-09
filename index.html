@@ -138,12 +138,34 @@
       <div class="logo-icon">⚔️</div>
       <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트</div></div>
     </a>
+    <button id="memo-toggle-btn" onclick="toggleMemo()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
+      <span style="font-size:18px;">🔄</span>
+      <span style="font-size:9px;color:var(--muted);font-family:inherit;">공략집</span>
+    </button>
     <div class="header-date"><div id="today-date">--</div><div>주간 리셋 <span>수요일 05:00</span></div></div>
   </div>
 </header>
 <div class="acc-tab-bar"><div class="acc-tab-inner" id="acc-tabs"></div></div>
 <div class="char-tab-bar"><div class="char-tab-inner" id="char-tabs"></div></div>
 <main class="main" id="main-content"></main>
+
+<!-- 공략집 메모장 화면 -->
+<div id="memo-screen" style="display:none;flex-direction:column;height:calc(100vh - 90px);max-width:800px;margin:0 auto;padding:12px 16px 60px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+    <div style="display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:4px;" id="memo-tabs"></div>
+    <button onclick="addMemoTab()" style="flex-shrink:0;margin-left:8px;background:none;border:1px dashed rgba(255,255,255,0.2);border-radius:6px;color:var(--muted);font-family:inherit;font-size:12px;padding:5px 10px;cursor:pointer;white-space:nowrap;">+ 추가</button>
+  </div>
+  <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input id="memo-title-input" type="text" maxlength="20" placeholder="탭 이름 편집..."
+        style="background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);outline:none;color:var(--gold);font-family:'Cinzel',serif;font-size:13px;font-weight:700;padding:2px 4px;flex:1;">
+      <button onclick="deleteMemoTab()" style="background:none;border:1px solid rgba(255,255,255,0.07);border-radius:5px;color:var(--muted);font-family:inherit;font-size:11px;padding:3px 8px;cursor:pointer;">삭제</button>
+    </div>
+    <textarea id="memo-content" placeholder="공략 내용을 입력하세요..."
+      style="flex:1;min-height:calc(100vh - 220px);background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;color:var(--text);font-family:inherit;font-size:13px;resize:none;outline:none;line-height:1.7;"></textarea>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <script>
 const DB_URL='https://aion2-9469f-default-rtdb.firebaseio.com/aion2.json';
@@ -421,7 +443,84 @@ function loadLocal(){
 }
 function saveLocal(){data.savedAt=Date.now();localStorage.setItem('aion2-local',JSON.stringify(data));}
 
-// 즉시 로컬 데이터로 시작
+// ---- 공략집 메모장 ----
+const MEMO_KEY='aion2-memos';
+let memos=[];
+let curMemo=0;
+let isMemoMode=false;
+let memoSaveTimer=null;
+
+function loadMemos(){
+  try{const s=localStorage.getItem(MEMO_KEY);if(s)memos=JSON.parse(s);}catch(e){}
+  if(!memos.length)memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
+}
+function saveMemos(){
+  clearTimeout(memoSaveTimer);
+  memoSaveTimer=setTimeout(()=>localStorage.setItem(MEMO_KEY,JSON.stringify(memos)),500);
+}
+function toggleMemo(){
+  isMemoMode=!isMemoMode;
+  const btn=document.getElementById('memo-toggle-btn');
+  const mainEl=document.getElementById('main-content');
+  const memoEl=document.getElementById('memo-screen');
+  const accBar=document.querySelector('.acc-tab-bar');
+  const charBar=document.querySelector('.char-tab-bar');
+  if(isMemoMode){
+    mainEl.style.display='none';
+    accBar.style.display='none';
+    charBar.style.display='none';
+    memoEl.style.display='flex';
+    btn.style.borderColor='rgba(201,168,76,0.5)';
+    btn.querySelector('span:last-child').style.color='var(--gold)';
+    renderMemoTabs();
+  } else {
+    mainEl.style.display='';
+    accBar.style.display='';
+    charBar.style.display='';
+    memoEl.style.display='none';
+    btn.style.borderColor='rgba(255,255,255,0.1)';
+    btn.querySelector('span:last-child').style.color='var(--muted)';
+  }
+}
+function renderMemoTabs(){
+  const el=document.getElementById('memo-tabs');el.innerHTML='';
+  memos.forEach((m,i)=>{
+    const btn=document.createElement('button');
+    btn.textContent=m.title;
+    btn.style.cssText=`flex-shrink:0;padding:5px 12px;border-radius:6px;font-family:inherit;font-size:12px;cursor:pointer;transition:all 0.2s;white-space:nowrap;
+      background:${i===curMemo?'rgba(201,168,76,0.12)':'rgba(255,255,255,0.03)'};
+      border:1px solid ${i===curMemo?'rgba(201,168,76,0.4)':'rgba(255,255,255,0.07)'};
+      color:${i===curMemo?'var(--gold)':'var(--muted)'};`;
+    btn.onclick=()=>{saveCurMemo();curMemo=i;renderMemoTabs();loadCurMemo();};
+    el.appendChild(btn);
+  });
+  loadCurMemo();
+}
+function loadCurMemo(){
+  const m=memos[curMemo];
+  document.getElementById('memo-title-input').value=m.title;
+  document.getElementById('memo-content').value=m.content;
+}
+function saveCurMemo(){
+  memos[curMemo].title=document.getElementById('memo-title-input').value||('메모'+(curMemo+1));
+  memos[curMemo].content=document.getElementById('memo-content').value;
+  saveMemos();
+}
+function addMemoTab(){
+  saveCurMemo();
+  memos.push({title:'메모'+(memos.length+1),content:''});
+  curMemo=memos.length-1;
+  saveMemos();renderMemoTabs();showToast('탭 추가됨');
+}
+function deleteMemoTab(){
+  if(memos.length<=1){showToast('최소 1개는 필요해요');return;}
+  memos.splice(curMemo,1);
+  curMemo=Math.max(0,curMemo-1);
+  saveMemos();renderMemoTabs();showToast('탭 삭제됨');
+}
+document.getElementById('memo-title-input').addEventListener('input',()=>{saveCurMemo();renderMemoTabs();});
+document.getElementById('memo-content').addEventListener('input',()=>{saveCurMemo();});
+loadMemos();
 try{const s=localStorage.getItem('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
 autoReset();render();
 document.getElementById('loading').style.display='none';
