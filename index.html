@@ -421,23 +421,18 @@ function loadLocal(){
 }
 function saveLocal(){data.savedAt=Date.now();localStorage.setItem('aion2-local',JSON.stringify(data));}
 
-// Firebase REST API로 로드
-let fbOk=false;
-const fbTimeout=setTimeout(()=>{
-  if(!fbOk){loadLocal();showToast('⚠️ 오프라인 모드');}
-},3000);
+// 즉시 로컬 데이터로 시작
+try{const s=localStorage.getItem('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
+autoReset();render();
+document.getElementById('loading').style.display='none';
 
+// Firebase는 백그라운드에서 연결 시도
 fbGet().then(val=>{
-  fbOk=true;clearTimeout(fbTimeout);
-  if(val){data=val;applyEnergy(data);ensureDefaults(data);}
-  else{
-    try{const s=localStorage.getItem('aion2-local');if(s)data=JSON.parse(s);}catch(e){}
-    ensureDefaults(data);
+  if(val&&(!data.savedAt||(val.savedAt&&val.savedAt>data.savedAt))){
+    data=val;applyEnergy(data);ensureDefaults(data);autoReset();render();
   }
-  autoReset();render();
-  document.getElementById('loading').style.display='none';
   setSyncStatus('online');
-  // 30초마다 폴링으로 다른 기기 변경 감지
+  // 30초마다 폴링
   setInterval(async()=>{
     try{
       const r=await fbGet();
@@ -446,9 +441,7 @@ fbGet().then(val=>{
       }
     }catch(e){}
   },30000);
-}).catch(()=>{
-  clearTimeout(fbTimeout);loadLocal();showToast('⚠️ 오프라인 모드');
-});
+}).catch(()=>{setSyncStatus('');});
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
 </script>
