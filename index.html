@@ -65,8 +65,8 @@
   .dot-blue{background:var(--blue);box-shadow:0 0 5px var(--blue);}
   .reset-btn{font-size:11px;color:var(--muted);background:none;border:1px solid rgba(255,255,255,0.07);border-radius:5px;padding:3px 10px;cursor:pointer;font-family:inherit;transition:all 0.2s;}
   .reset-btn:hover{color:var(--red);border-color:rgba(224,85,85,0.3);}
-  .task-list{display:flex;flex-direction:column;gap:5px;}
-  .task-item{background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:9px;display:flex;align-items:center;gap:12px;padding:11px 14px;cursor:pointer;transition:all 0.15s ease;position:relative;user-select:none;}
+  .task-list{display:flex;flex-direction:column;gap:3px;}
+  .task-item{background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:9px;display:flex;align-items:center;gap:12px;padding:8px 14px;cursor:pointer;transition:all 0.15s ease;position:relative;user-select:none;}
   .task-item:hover{background:var(--card2);transform:translateX(2px);}
   .task-item.done{opacity:0.45;border-color:rgba(78,207,122,0.1);}
   .task-item.done::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--green);border-radius:9px 0 0 9px;}
@@ -91,7 +91,7 @@
   .energy-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#4a9edd,#c9a84c);transition:width 0.3s ease;}
   .energy-slider{width:100%;display:block;margin:8px 0 4px;accent-color:var(--gold);cursor:pointer;height:20px;}
   .energy-input-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
-  .energy-direct{background:rgba(0,0,0,0.4);border:1px solid rgba(201,168,76,0.3);border-radius:6px;color:var(--gold);font-family:inherit;font-size:13px;font-weight:700;width:68px;padding:5px 8px;outline:none;text-align:center;}
+  .energy-direct{background:none;border:none;border-bottom:1px solid rgba(201,168,76,0.5);color:var(--gold);font-family:inherit;font-size:15px;font-weight:700;width:60px;padding:2px 2px;outline:none;text-align:right;}
   .energy-direct:focus{border-color:var(--gold);}
   .energy-btns{display:flex;gap:5px;flex:1;}
   .energy-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;padding:4px 8px;cursor:pointer;transition:all 0.15s;}
@@ -102,8 +102,8 @@
   .energy-btn.reset-e{color:var(--muted);}
   /* TOTAL VIEW */
   /* 7. 계정간 간격 축소 */
-  .total-acc-block{margin-bottom:10px;}
-  .total-acc-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;padding:7px 0 5px;border-bottom:1px solid var(--gold-dim);margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;}
+  .total-acc-block{margin-bottom:3px;}
+  .total-acc-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;padding:4px 0 3px;border-bottom:1px solid var(--gold-dim);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
   .total-acc-title .acc-total-prog{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;}
   .icon-char-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:7px;margin-bottom:3px;}
   .icon-char-name{font-size:11px;color:var(--blue);font-weight:600;width:60px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -114,7 +114,10 @@
   .icon-task:hover{background:rgba(255,255,255,0.08);}
   .icon-task.done{background:rgba(224,85,85,0.2);border-color:rgba(224,85,85,0.55);}
   .icon-task.done::after{content:'✓';position:absolute;bottom:-2px;right:-1px;font-size:8px;color:var(--red);font-weight:900;line-height:1;}
-  .icon-energy{font-size:9px;font-weight:700;color:var(--gold);width:30px;height:24px;border-radius:5px;border:1px solid rgba(201,168,76,0.2);background:rgba(201,168,76,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .icon-energy{font-size:9px;font-weight:700;color:var(--muted);width:30px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .icon-energy.e-mid{color:#4a9edd;border-color:rgba(74,158,221,0.4);background:rgba(74,158,221,0.08);}
+  .icon-energy.e-high{color:#c9a84c;border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.1);}
+  .icon-energy.e-max{color:#4ecf7a;border-color:rgba(78,207,122,0.6);background:rgba(78,207,122,0.12);box-shadow:0 0 6px rgba(78,207,122,0.3);}
   .total-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding:7px 10px;background:rgba(255,255,255,0.02);border-radius:7px;}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
@@ -130,7 +133,14 @@
 </style>
 </head>
 <body>
-<div class="loading-screen" id="loading"><div class="loading-icon">⚔️</div><div class="loading-text">데이터 불러오는 중...</div></div>
+<script>
+// 서비스워커 즉시 강제 삭제 (캐시 문제 해결)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(regs=>{regs.forEach(r=>r.unregister());});
+  if(window.caches)caches.keys().then(keys=>{keys.forEach(k=>caches.delete(k));});
+}
+</script>
+<div class="loading-screen" id="loading" style="display:none"><div class="loading-icon">⚔️</div><div class="loading-text">데이터 불러오는 중...</div></div>
 <div class="sync-bar"><div class="sync-dot" id="sync-dot"></div><span class="sync-label" id="sync-label">연결 중...</span></div>
 <header class="header">
   <div class="header-inner">
@@ -218,16 +228,15 @@ function calcEnergyCharge(stored,lastMs){
   // 00시 기준 고정 슬롯: 0,3,6,9,12,15,18,21시
   function slotsPassed(f,t){
     let count=0;
-    // f 이후 첫 슬롯부터 t 이전 마지막 슬롯까지 카운트
     const cur=new Date(f);
     cur.setMinutes(0,0,0);
-    // 다음 슬롯 시각으로 올림
     const h=cur.getHours();
-    const nextH=Math.ceil(h/3)*3; // 3의 배수로 올림
-    cur.setHours(nextH===24?0:nextH);
-    if(nextH===24)cur.setDate(cur.getDate()+1);
+    // f 이후 첫 슬롯 (같은 시각은 제외)
+    const nextH=Math.floor(h/3)*3+3;
+    cur.setHours(nextH>=24?nextH-24:nextH);
+    if(nextH>=24)cur.setDate(cur.getDate()+1);
     while(cur<=t){
-      if(cur.getHours()%3===0)count++;
+      count++;
       cur.setHours(cur.getHours()+3);
     }
     return count;
@@ -238,7 +247,7 @@ function calcEnergyCharge(stored,lastMs){
 
 function save(){
   data.savedAt=Date.now();
-  localStorage.setItem('aion2-local',JSON.stringify(data));
+  lsSet('aion2-local',JSON.stringify(data));
   setSyncStatus('syncing');clearTimeout(saveTimer);
   saveTimer=setTimeout(async()=>{
     try{await fbSet(data);setSyncStatus('online');}
@@ -246,33 +255,38 @@ function save(){
   },1000);
 }
 
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+
 function autoReset(){
   const now=new Date();
-  // 2. 사명임무·악몽던전: 매일 05:00 초기화
+  // 사명임무·악몽던전: 매일 05:00 초기화
   const base=new Date(now);
   if(now.getHours()<5)base.setDate(base.getDate()-1);
   base.setHours(5,0,0,0);
-  const dayKey=base.toISOString();
-  if(localStorage.getItem('aion2-day')!==dayKey){
+  const dayKey=base.getFullYear()+'-'+(base.getMonth()+1)+'-'+base.getDate()+'_05';
+  if(lsGet('aion2-day')!==dayKey){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr1','dr5'].forEach(id=>{ch.state[id]=false;})));
-    localStorage.setItem('aion2-day',dayKey);
+    lsSet('aion2-day',dayKey);
   }
   // 어비스 회랑: 화목토 21:00
-  function lastAbyss(n){for(let b=0;b<=7;b++){const d=new Date(n);d.setDate(d.getDate()-b);d.setHours(21,0,0,0);if([2,4,6].includes(d.getDay())&&d<=n)return d;}}
-  const ak=(lastAbyss(now)||new Date(0)).toISOString();
-  if(localStorage.getItem('aion2-abyss')!==ak){
-    data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
-    localStorage.setItem('aion2-abyss',ak);
+  function lastAbyss(n){for(let b=0;b<=7;b++){const d=new Date(n);d.setDate(d.getDate()-b);d.setHours(21,0,0,0);if([2,4,6].includes(d.getDay())&&d<=n)return d;}
   }
-  // 8. 주간: 수요일 05:00 초기화
+  const la=lastAbyss(now)||new Date(0);
+  const ak=la.getFullYear()+'-'+(la.getMonth()+1)+'-'+la.getDate()+'_21abyss';
+  if(lsGet('aion2-abyss')!==ak){
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
+    lsSet('aion2-abyss',ak);
+  }
+  // 주간: 수요일 05:00 초기화
   const w=new Date(now);
   let dw=now.getDay()>=3?now.getDay()-3:now.getDay()+4;
   w.setDate(now.getDate()-dw);w.setHours(5,0,0,0);
   if(w>now)w.setDate(w.getDate()-7);
-  const wk=w.toISOString();
-  if(localStorage.getItem('aion2-week')!==wk){
+  const wk=w.getFullYear()+'-'+(w.getMonth()+1)+'-'+w.getDate()+'_wed05';
+  if(lsGet('aion2-week')!==wk){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
-    localStorage.setItem('aion2-week',wk);
+    lsSet('aion2-week',wk);
   }
 }
 
@@ -287,6 +301,18 @@ function ensureDefaults(d){
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
+function cpColor(cp){
+  if(!cp||cp<10)return '#6a7a90';   // 회색
+  if(cp<15)return '#cd7f32';         // 브론즈
+  if(cp<18)return '#aab8c2';         // 실버
+  if(cp<20)return '#c9a84c';         // 골드
+  if(cp<25)return '#4a9edd';         // 블루
+  return '#a06af0';                   // 퍼플
+}
+function cpLabel(cp){
+  if(!cp||cp<1)return '';
+  return `<span style="font-size:10px;font-weight:700;color:${cpColor(cp)};margin-left:4px;">${cp}</span>`;
+}
 
 function renderAccTabs(){
   const el=document.getElementById('acc-tabs');el.innerHTML='';
@@ -301,7 +327,7 @@ function renderAccTabs(){
     const btn=document.createElement('button');
     btn.className='acc-tab'+(i===curAcc?' active':'');
     btn.innerHTML=`<span>${acc.name}</span><span class="acc-prog">${d}/${m}</span>`;
-    btn.onclick=()=>{curAcc=i;curChar=0;render();};el.appendChild(btn);
+    btn.onclick=()=>{curAcc=i;curChar=0;render();const mc=document.getElementById('main-content');if(mc)mc.parentElement.scrollTop=0;window.scrollTo(0,0);};el.appendChild(btn);
   });
 }
 
@@ -313,9 +339,14 @@ function renderCharTabs(){
   acc.chars.forEach((ch,i)=>{
     const d=getProgress(ch);
     const btn=document.createElement('button');
-    btn.className='char-tab'+(i===curChar?' active':'');
+    btn.className='char-tab';
+    btn.id='char-tab-'+i;
     btn.innerHTML=`${ch.name} <span class="char-done">${d}/${TOTAL}</span>`;
-    btn.onclick=()=>{curChar=i;render();};el.appendChild(btn);
+    btn.onclick=()=>{
+      const target=document.getElementById('char-section-'+i);
+      if(target)target.scrollIntoView({behavior:'instant',block:'start'});
+    };
+    el.appendChild(btn);
   });
   const add=document.createElement('button');
   add.className='add-char-btn';add.textContent='+ 캐릭터 추가';add.onclick=addChar;el.appendChild(add);
@@ -331,11 +362,13 @@ function renderTotalView(){
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'🏰',wd4:'🛒'};
       const taskHtml=TASKS.map(t=>{
-        if(t.type==='energy')return `<div class="icon-energy" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;
+        if(t.type==='energy'){const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';return `<div class="icon-energy ${ecls}" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;}
         const done=!!(ch.state&&ch.state[t.id]);
         return `<div class="icon-task${done?' done':''}" title="${t.name}" onclick="window._tt(${ai},${ci},'${t.id}')">${icons[t.id]||'•'}</div>`;
       }).join('');
-      html+=`<div class="icon-char-row"><span class="icon-char-name" title="${ch.name}">${ch.name}</span><div class="icon-tasks">${taskHtml}</div></div>`;
+      const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
+      const cpTag=ch.cp?`<span style="font-size:9px;font-weight:700;color:${cpColor(ch.cp)};margin-right:3px;">${ch.cp}</span>`:'';
+      html+=`<div class="icon-char-row"><div class="icon-char-name" style="width:70px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'48px':'60px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div></div>`;
     });
     html+=`</div>`;
   });
@@ -344,36 +377,85 @@ function renderTotalView(){
 }
 
 function renderCharView(){
-  const acc=data.accounts[curAcc],ch=acc.chars[curChar];
+  const acc=data.accounts[curAcc];
   const main=document.getElementById('main-content');
-  const delBtn=acc.chars.length>1?`<button class="sm-btn" onclick="window._del()">캐릭터 삭제</button>`:'';
-  main.innerHTML=`
-    <div class="top-row">
+  // 계정명 수정 행
+  let html=`
+    <div class="top-row" style="padding-bottom:8px;">
       <input class="name-input" id="ani" type="text" maxlength="10" value="${acc.name}" placeholder="계정명"/>
-      <input class="name-input char-name-input" id="cni" type="text" maxlength="10" value="${ch.name}" placeholder="캐릭터명"/>
-      <div class="top-btns">${delBtn}<button class="sm-btn" onclick="window._ra()">전체 초기화</button></div>
-    </div>
-    <div class="section-header">
-      <div class="section-label"><span class="dot dot-blue"></span> 일일 숙제</div>
-      <button class="reset-btn" onclick="window._rg()">초기화</button>
-    </div>
-    <div class="task-list" id="list-daily"></div>
-    <div class="notes-section"><div class="notes-label">📝 메모</div><textarea id="notes" placeholder="이 캐릭터 메모...">${ch.notes||''}</textarea></div>`;
-  document.getElementById('ani').addEventListener('input',e=>{data.accounts[curAcc].name=e.target.value||('계정'+(curAcc+1));save();renderAccTabs();});
-  document.getElementById('cni').addEventListener('input',e=>{getChar().name=e.target.value||('캐릭터'+(curChar+1));save();renderCharTabs();});
-  document.getElementById('notes').addEventListener('input',e=>{getChar().notes=e.target.value;save();});
-  renderTaskList();
+      <button class="add-char-btn" style="margin-left:auto;" onclick="addChar()">+ 캐릭터 추가</button>
+    </div>`;
+  // 각 캐릭터 섹션
+  acc.chars.forEach((ch,i)=>{
+    const energy=(ch.state&&ch.state['__energy'])||0;
+    const pct=Math.round(energy/840*100);
+    const delBtn=acc.chars.length>1?`<button class="sm-btn" onclick="window._delChar(${i})">삭제</button>`:'';
+    html+=`<div id="char-section-${i}" style="margin-bottom:28px;scroll-margin-top:150px;">
+      <div style="display:flex;align-items:center;gap:6px;padding:10px 0 6px;border-bottom:1px solid rgba(255,255,255,0.07);margin-bottom:10px;">
+        <input class="name-input char-name-input" data-ci="${i}" type="text" maxlength="10" value="${ch.name}" placeholder="캐릭터명"
+          style="font-size:14px;color:${ch.cp?cpColor(ch.cp):'var(--blue)'}; max-width:90px;"/>
+        <input class="cp-inp" data-ci="${i}" type="number" min="10" max="30" value="${ch.cp||''}" placeholder="전투력"
+          style="background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.2);outline:none;
+          color:${ch.cp?cpColor(ch.cp):'var(--muted)'};font-family:inherit;font-size:12px;font-weight:700;
+          width:52px;padding:1px 2px;text-align:left;">
+        <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;">
+          ${delBtn}
+          <button class="sm-btn" onclick="window._raIdx(${i})">초기화</button>
+        </div>
+      </div>
+      <div class="task-list" id="list-char-${i}"></div>
+      <div class="notes-section" style="margin-top:12px;">
+        <div class="notes-label">📝 메모</div>
+        <textarea class="char-notes" data-ci="${i}" placeholder="이 캐릭터 메모...">${ch.notes||''}</textarea>
+      </div>
+    </div>`;
+  });
+  main.innerHTML=html;
+
+  // 계정명 이벤트
+  document.getElementById('ani').addEventListener('input',e=>{
+    data.accounts[curAcc].name=e.target.value||('계정'+(curAcc+1));save();renderAccTabs();
+  });
+  // 캐릭터명 이벤트
+  document.querySelectorAll('.name-input.char-name-input').forEach(el=>{
+    el.addEventListener('input',e=>{
+      const ci=parseInt(e.target.dataset.ci);
+      data.accounts[curAcc].chars[ci].name=e.target.value||('캐릭터'+(ci+1));
+      save();renderCharTabs();
+    });
+  });
+  // 전투력 이벤트
+  document.querySelectorAll('.cp-inp').forEach(el=>{
+    el.addEventListener('input',e=>{
+      const ci=parseInt(e.target.dataset.ci);
+      const v=parseInt(e.target.value)||0;
+      data.accounts[curAcc].chars[ci].cp=v||undefined;
+      e.target.style.color=v>=10?cpColor(v):'var(--muted)';
+      // 캐릭터명 색상도 업데이트
+      const nameEl=document.querySelector(`.name-input.char-name-input[data-ci="${ci}"]`);
+      if(nameEl)nameEl.style.color=v>=10?cpColor(v):'var(--blue)';
+      save();renderCharTabs();
+    });
+  });
+  // 메모 이벤트
+  document.querySelectorAll('.char-notes').forEach(el=>{
+    el.addEventListener('input',e=>{
+      const ci=parseInt(e.target.dataset.ci);
+      data.accounts[curAcc].chars[ci].notes=e.target.value;save();
+    });
+  });
+  // 각 캐릭터 태스크 렌더
+  acc.chars.forEach((_,i)=>renderTaskListForChar(i));
 }
 
-function renderTaskList(){
-  const el=document.getElementById('list-daily');if(!el)return;
-  const ch=getChar();el.innerHTML='';
+function renderTaskListForChar(ci){
+  const el=document.getElementById('list-char-'+ci);if(!el)return;
+  const ch=data.accounts[curAcc].chars[ci];
+  el.innerHTML='';
   let sepDone=false;
   TASKS.forEach(task=>{
     if(task.weekly&&!sepDone){
       sepDone=true;
-      const s=document.createElement('div');s.className='weekly-sep';el.appendChild(s);
-      const l=document.createElement('span');l.className='weekly-label';l.textContent='주간';el.appendChild(l);
     }
     const div=document.createElement('div');
     if(task.type==='energy'){
@@ -382,25 +464,22 @@ function renderTaskList(){
       div.innerHTML=`<div class="energy-bar-wrap">
         <div class="energy-label-row">
           <div><div class="energy-name">⚡ ${task.name}</div><div class="energy-desc">${task.desc}</div></div>
-          <div class="energy-val">${e} / 840</div>
-        </div>
-        <div class="energy-track"><div class="energy-fill" style="width:${pct}%"></div></div>
-        <input class="energy-slider" type="range" min="0" max="840" step="10" value="${e}" oninput="window._se(parseInt(this.value))">
-        <div class="energy-input-row">
           <input class="energy-direct" type="number" min="0" max="840" value="${e}" placeholder="0~840"
-            onchange="window._se(Math.max(0,Math.min(840,parseInt(this.value)||0)))"
+            onchange="window._seIdx(${ci},Math.max(0,Math.min(840,parseInt(this.value)||0)))"
             onclick="this.select()">
-          <div class="energy-btns">
-            <button class="energy-btn minus" onclick="window._ae(-120)">−120</button>
-            <button class="energy-btn plus" onclick="window._ae(120)">+120</button>
-            <button class="energy-btn full" onclick="window._se(840)">MAX</button>
-            <button class="energy-btn reset-e" onclick="window._se(0)">초기화</button>
-          </div>
+          <div class="energy-val" style="cursor:default;">/ 840</div>
+        </div>
+        <input class="energy-slider" type="range" min="0" max="840" step="10" value="${e}" oninput="window._seIdx(${ci},parseInt(this.value))">
+        <div class="energy-btns" style="margin-top:4px;">
+          <button class="energy-btn minus" onclick="window._aeIdx(${ci},-80)">−80</button>
+          <button class="energy-btn plus" onclick="window._aeIdx(${ci},120)">+120</button>
+          <button class="energy-btn full" onclick="window._seIdx(${ci},840)">MAX</button>
+          <button class="energy-btn reset-e" onclick="window._seIdx(${ci},0)">초기화</button>
         </div></div>`;
     } else {
       const done=!!(ch.state&&ch.state[task.id]);
       div.className='task-item'+(done?' done':'');
-      div.onclick=()=>toggle(task.id);
+      div.onclick=()=>toggleIdx(ci,task.id);
       div.innerHTML=`<div class="check">${done?'✓':''}</div>
         <div class="task-info"><div class="task-name">${task.name}</div><div class="task-desc">${task.desc}</div></div>
         <div class="task-count">${task.count}</div>`;
@@ -411,7 +490,22 @@ function renderTaskList(){
 
 function render(){renderAccTabs();renderCharTabs();if(curAcc===-1)renderTotalView();else renderCharView();}
 
-function toggle(id){const ch=getChar();if(!ch.state)ch.state={};ch.state[id]=!ch.state[id];save();render();if(ch.state[id])showToast('✓ 완료!');}
+function toggleIdx(ci,id){
+  const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};
+  ch.state[id]=!ch.state[id];save();
+  renderTaskListForChar(ci);renderCharTabs();renderAccTabs();
+  if(ch.state[id])showToast('✓ 완료!');
+}
+function toggle(id){toggleIdx(curChar,id);}
+window._raIdx=(ci)=>{const ch=data.accounts[curAcc].chars[ci];ALL_IDS.forEach(id=>{ch.state[id]=false;});save();renderTaskListForChar(ci);renderCharTabs();renderAccTabs();showToast('초기화 완료');};
+window._ra=()=>window._raIdx(curChar);
+window._rg=()=>window._raIdx(curChar);
+window._aeIdx=(ci,d)=>{const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,(ch.state['__energy']||0)+d));save();renderTaskListForChar(ci);};
+window._seIdx=(ci,v)=>{const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,v||0));save();renderTaskListForChar(ci);};
+window._ae=(d)=>window._aeIdx(curChar,d);
+window._se=(v)=>window._seIdx(curChar,v);
+window._delChar=(ci)=>{const acc=data.accounts[curAcc];if(acc.chars.length<=1)return;acc.chars.splice(ci,1);save();render();showToast('캐릭터 삭제됨');};
+window._del=()=>window._delChar(curChar);
 window._tt=(ai,ci,id)=>{const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};ch.state[id]=!ch.state[id];save();renderTotalView();renderAccTabs();if(ch.state[id])showToast('✓ 완료!');};
 window._editEnergy=(ai,ci,el)=>{
   const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
@@ -428,20 +522,15 @@ window._editEnergy=(ai,ci,el)=>{
   input.addEventListener('blur',confirm);
   input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')renderTotalView();});
 };
-window._rg=()=>{const ch=getChar();TASKS.forEach(t=>{if(!t.type)ch.state[t.id]=false;});save();render();showToast('초기화 완료');};
-window._ra=()=>{const ch=getChar();ALL_IDS.forEach(id=>{ch.state[id]=false;});save();render();showToast('전체 초기화');};
-window._ae=(d)=>{const ch=getChar();if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,(ch.state['__energy']||0)+d));save();render();};
-window._se=(v)=>{const ch=getChar();if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,v||0));save();render();};
-function addChar(){const acc=data.accounts[curAcc];acc.chars.push({name:'캐릭터'+(acc.chars.length+1),state:{},notes:''});curChar=acc.chars.length-1;save();render();showToast('캐릭터 추가됨');}
-window._del=()=>{const acc=data.accounts[curAcc];if(acc.chars.length<=1)return;acc.chars.splice(curChar,1);curChar=Math.max(0,curChar-1);save();render();showToast('캐릭터 삭제됨');};
+function addChar(){const acc=data.accounts[curAcc];acc.chars.push({name:'캐릭터'+(acc.chars.length+1),state:{},notes:''});save();render();showToast('캐릭터 추가됨');}
 function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600);}
 
 // Firebase + 타임아웃 (5초 안에 안되면 로컬로 fallback)
 function loadLocal(){
-  try{const s=localStorage.getItem('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
+  try{const s=lsGet('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
   autoReset();render();document.getElementById('loading').style.display='none';setSyncStatus('');
 }
-function saveLocal(){data.savedAt=Date.now();localStorage.setItem('aion2-local',JSON.stringify(data));}
+function saveLocal(){data.savedAt=Date.now();lsSet('aion2-local',JSON.stringify(data));}
 
 // ---- 공략집 메모장 ----
 const MEMO_KEY='aion2-memos';
@@ -451,12 +540,12 @@ let isMemoMode=false;
 let memoSaveTimer=null;
 
 function loadMemos(){
-  try{const s=localStorage.getItem(MEMO_KEY);if(s)memos=JSON.parse(s);}catch(e){}
+  try{const s=lsGet(MEMO_KEY);if(s)memos=JSON.parse(s);}catch(e){}
   if(!memos.length)memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
 }
 function saveMemos(){
   clearTimeout(memoSaveTimer);
-  memoSaveTimer=setTimeout(()=>localStorage.setItem(MEMO_KEY,JSON.stringify(memos)),500);
+  memoSaveTimer=setTimeout(()=>lsSet(MEMO_KEY,JSON.stringify(memos)),500);
 }
 function toggleMemo(){
   isMemoMode=!isMemoMode;
@@ -528,8 +617,9 @@ if('serviceWorker' in navigator){
   caches.keys().then(keys=>keys.forEach(k=>caches.delete(k)));
 }
 
-try{const s=localStorage.getItem('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
-autoReset();render();
+try{const s=lsGet('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
+try{autoReset();}catch(e){}
+render();
 document.getElementById('loading').style.display='none';
 
 // Firebase는 백그라운드에서 연결 시도
