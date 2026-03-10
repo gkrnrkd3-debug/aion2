@@ -386,7 +386,7 @@ function renderTotalView(){
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'🏰',wd4:'🛒'};
       const taskHtml=TASKS.map(t=>{
-        if(t.type==='energy'){const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';return `<div class="icon-energy ${ecls}" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;}
+        if(t.type==='energy'){const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';return `<div class="icon-energy ${ecls}" data-ai="${ai}" data-ci="${ci}" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;}
         const done=!!(ch.state&&ch.state[t.id]);
         return `<div class="icon-task${done?' done':''}" title="${t.name}" onclick="window._tt(${ai},${ci},'${t.id}')">${icons[t.id]||'•'}</div>`;
       }).join('');
@@ -540,24 +540,44 @@ window._editEnergy=(ai,ci,el)=>{
   input.className='total-energy-input';
   const down=document.createElement('button');
   down.className='total-energy-down';down.textContent='▼';
+
+  // 저장 후 해당 셀만 원래 에너지 div로 복원 (renderTotalView 안 씀)
+  function restoreCell(v){
+    const ecls=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';
+    const newEl=document.createElement('div');
+    newEl.className='icon-energy'+(ecls?' '+ecls:'');
+    newEl.dataset.ai=ai;newEl.dataset.ci=ci;
+    newEl.title='클릭해서 수정';
+    newEl.textContent=v>=840?'MAX':v;
+    newEl.onclick=()=>window._editEnergy(ai,ci,newEl);
+    wrap.replaceWith(newEl);
+    renderAccTabs();
+  }
+
+  let confirmed=false;
+  function confirm(){
+    if(confirmed)return;confirmed=true;
+    const v=Math.max(0,Math.min(840,parseInt(input.value)||0));
+    ch.state['__energy']=v;save();restoreCell(v);
+  }
+
   down.addEventListener('mousedown',e=>e.preventDefault());
   down.addEventListener('click',e=>{
     e.stopPropagation();
-    const v=Math.max(0,(parseInt(input.value)||0)-80);
-    input.value=v;ch.state['__energy']=v;save();renderTotalView();renderAccTabs();
+    confirmed=true;
+    const v=Math.max(0,Math.min(840,(parseInt(input.value)||0)-80));
+    input.value=v;ch.state['__energy']=v;save();restoreCell(v);
   });
+
   wrap.appendChild(input);wrap.appendChild(down);
   el.replaceWith(wrap);
   input.focus();input.select();
-  function confirm(){
-    const v=Math.max(0,Math.min(840,parseInt(input.value)||0));
-    ch.state['__energy']=v;save();renderTotalView();renderAccTabs();
-  }
+
   input.addEventListener('blur',confirm);
-  input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')renderTotalView();});
-  setTimeout(()=>document.addEventListener('click',function handler(e){
-    if(!wrap.contains(e.target)){renderTotalView();document.removeEventListener('click',handler);}
-  }),100);
+  input.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){input.blur();}
+    if(e.key==='Escape'){confirmed=true;restoreCell(cur);}
+  });
 };
 function addChar(){const acc=data.accounts[curAcc];acc.chars.push({name:'캐릭터'+(acc.chars.length+1),state:{},notes:''});save();render();showToast('캐릭터 추가됨');}
 function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600);}
@@ -676,13 +696,31 @@ fbGet().then(val=>{
   },30000);
 }).catch(()=>{setSyncStatus('');});
 
-// 1분마다 에너지 자동충전 업데이트 (앱 켜놓을 때)
-setInterval(()=>{
-  applyEnergy(data);
-  data.savedAt=Date.now();
-  lsSet('aion2-local',JSON.stringify(data));
-  render();
-},60000);
+// 충전 시각(0,3,6,9,12,15,18,21시) 정각에만 에너지 업데이트
+function scheduleEnergyUpdate(){
+  const now=new Date();
+  const h=now.getHours();
+  const nextSlotH=(Math.floor(h/3)+1)*3;
+  const next=new Date(now);
+  next.setHours(nextSlotH>=24?0:nextSlotH,0,10,0); // 정각+10초
+  if(nextSlotH>=24)next.setDate(next.getDate()+1);
+  const ms=next-now;
+  setTimeout(()=>{
+    applyEnergy(data);
+    data.savedAt=Date.now();
+    lsSet('aion2-local',JSON.stringify(data));
+    document.querySelectorAll('.icon-energy').forEach(el=>{
+      const ai=parseInt(el.dataset.ai),ci=parseInt(el.dataset.ci);
+      if(isNaN(ai)||isNaN(ci))return;
+      const e=(data.accounts[ai]?.chars[ci]?.state?.['__energy'])||0;
+      const ecls=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
+      el.className='icon-energy'+(ecls?' '+ecls:'');
+      el.textContent=e>=840?'MAX':e;
+    });
+    scheduleEnergyUpdate(); // 다음 슬롯 예약
+  },ms);
+}
+scheduleEnergyUpdate();
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
 </script>
