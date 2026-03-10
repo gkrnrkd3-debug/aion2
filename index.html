@@ -93,6 +93,12 @@
   .energy-input-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
   .energy-direct{background:none;border:none;border-bottom:1px solid rgba(201,168,76,0.5);color:var(--gold);font-family:inherit;font-size:15px;font-weight:700;width:60px;padding:2px 2px;outline:none;text-align:right;}
   .energy-direct:focus{border-color:var(--gold);}
+  /* 토탈탭 에너지 입력창 */
+  .total-energy-input{background:#0a0d14;border:1px solid rgba(201,168,76,0.5);border-radius:4px 0 0 4px;color:var(--gold);font-size:9px;font-weight:700;width:34px;text-align:center;padding:2px;outline:none;}
+  .total-energy-input::-webkit-inner-spin-button,.total-energy-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  .total-energy-input[type=number]{-moz-appearance:textfield;}
+  .total-energy-down{background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);border-left:none;border-radius:0 4px 4px 0;color:var(--gold);font-size:9px;font-weight:700;padding:0 4px;cursor:pointer;line-height:1;display:flex;align-items:center;}
+  .total-energy-wrap{display:flex;align-items:stretch;}
   .energy-btns{display:flex;gap:5px;flex:1;}
   .energy-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px;padding:4px 8px;cursor:pointer;transition:all 0.15s;}
   .energy-btn.plus{color:var(--gold);border-color:rgba(201,168,76,0.3);}
@@ -528,10 +534,20 @@ window._tt=(ai,ci,id)=>{const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.sta
 window._editEnergy=(ai,ci,el)=>{
   const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
   const cur=(ch.state['__energy']||0);
+  const wrap=document.createElement('div');wrap.className='total-energy-wrap';
   const input=document.createElement('input');
   input.type='number';input.min=0;input.max=840;input.value=cur;
-  input.style.cssText='width:36px;background:#0a0d14;border:1px solid var(--gold);border-radius:4px;color:var(--gold);font-size:9px;font-weight:700;text-align:center;padding:2px;outline:none;';
-  el.replaceWith(input);
+  input.className='total-energy-input';
+  const down=document.createElement('button');
+  down.className='total-energy-down';down.textContent='▼';
+  down.addEventListener('mousedown',e=>e.preventDefault());
+  down.addEventListener('click',e=>{
+    e.stopPropagation();
+    const v=Math.max(0,(parseInt(input.value)||0)-80);
+    input.value=v;ch.state['__energy']=v;save();renderTotalView();renderAccTabs();
+  });
+  wrap.appendChild(input);wrap.appendChild(down);
+  el.replaceWith(wrap);
   input.focus();input.select();
   function confirm(){
     const v=Math.max(0,Math.min(840,parseInt(input.value)||0));
@@ -539,6 +555,9 @@ window._editEnergy=(ai,ci,el)=>{
   }
   input.addEventListener('blur',confirm);
   input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape')renderTotalView();});
+  setTimeout(()=>document.addEventListener('click',function handler(e){
+    if(!wrap.contains(e.target)){renderTotalView();document.removeEventListener('click',handler);}
+  }),100);
 };
 function addChar(){const acc=data.accounts[curAcc];acc.chars.push({name:'캐릭터'+(acc.chars.length+1),state:{},notes:''});save();render();showToast('캐릭터 추가됨');}
 function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),1600);}
@@ -656,6 +675,14 @@ fbGet().then(val=>{
     }catch(e){}
   },30000);
 }).catch(()=>{setSyncStatus('');});
+
+// 1분마다 에너지 자동충전 업데이트 (앱 켜놓을 때)
+setInterval(()=>{
+  applyEnergy(data);
+  data.savedAt=Date.now();
+  lsSet('aion2-local',JSON.stringify(data));
+  render();
+},60000);
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
 </script>
