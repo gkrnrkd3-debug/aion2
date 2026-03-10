@@ -152,13 +152,13 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트</div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:8px;color:rgba(255,255,255,0.25);margin-left:4px;">v37</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
       <span style="font-size:9px;color:var(--muted);font-family:inherit;">공략집</span>
     </button>
-    <div class="header-date"><div id="today-date">--</div><div>주간 리셋 <span>수요일 05:00</span></div></div>
+    <div class="header-date"><div id="today-date">--</div><div id="charge-time-label" style="color:var(--gold);font-size:10px;">최근 충전 --:--</div></div>
   </div>
 </header>
 <div class="acc-tab-bar"><div class="acc-tab-inner" id="acc-tabs"></div></div>
@@ -231,14 +231,14 @@ function calcEnergyCharge(stored,lastMs){
   if(!lastMs)return stored;
   const from=new Date(lastMs),to=new Date();
   if(to<=from)return stored;
-  // 00시 기준 고정 슬롯: 0,3,6,9,12,15,18,21시
+  // 충전 슬롯: 02,05,08,11,14,17,20,23시 (h%3==2)
   function slotsPassed(f,t){
     let count=0;
     const cur=new Date(f);
     cur.setMinutes(0,0,0);
     const h=cur.getHours();
-    // f 이후 첫 슬롯 (같은 시각은 제외)
-    const nextH=Math.floor(h/3)*3+3;
+    // f 이후 첫 슬롯 (h%3==2인 시각)
+    let nextH=h+((2-h%3+3)%3||3);
     cur.setHours(nextH>=24?nextH-24:nextH);
     if(nextH>=24)cur.setDate(cur.getDate()+1);
     while(cur<=t){
@@ -381,7 +381,12 @@ function renderTotalView(){
   let html='';
   data.accounts.forEach((acc,ai)=>{
     const ad=acc.chars.reduce((s,c)=>s+getProgress(c),0),am=acc.chars.length*TOTAL;
-    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><span class="acc-total-prog">${ad}/${am}</span></div>`;
+    const allEnergyBtns=ai===0?`
+      <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+        <button onclick="window._allEnergy(-15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">−15</button>
+        <button onclick="window._allEnergy(15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">+15</button>
+      </div>`:'';
+    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><span class="acc-total-prog" style="margin-right:${ai===0?'4px':'0'}">${ad}/${am}</span>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'🏰',wd4:'🛒'};
@@ -530,6 +535,14 @@ window._ae=(d)=>window._aeIdx(curChar,d);
 window._se=(v)=>window._seIdx(curChar,v);
 window._delChar=(ci)=>{const acc=data.accounts[curAcc];if(acc.chars.length<=1)return;acc.chars.splice(ci,1);save();render();showToast('캐릭터 삭제됨');};
 window._del=()=>window._delChar(curChar);
+window._allEnergy=(delta)=>{
+  data.accounts.forEach(acc=>acc.chars.forEach(ch=>{
+    if(!ch.state)ch.state={};
+    const v=Math.max(0,Math.min(840,(ch.state['__energy']||0)+delta));
+    ch.state['__energy']=v;
+  }));
+  save();renderTotalView();showToast((delta>0?'+':'')+delta+' 전체 에너지');
+};
 window._tt=(ai,ci,id)=>{const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};ch.state[id]=!ch.state[id];save();renderTotalView();renderAccTabs();if(ch.state[id])showToast('✓ 완료!');};
 window._editEnergy=(ai,ci,el)=>{
   const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
@@ -697,18 +710,38 @@ fbGet().then(val=>{
 }).catch(()=>{setSyncStatus('');});
 
 // 충전 시각(0,3,6,9,12,15,18,21시) 정각에만 에너지 업데이트
+function getLastChargeTime(){
+  const now=new Date();
+  const h=now.getHours();
+  // 가장 최근 충전 시각 (h%3==2인 시각)
+  let lastH=h-((h-2+24)%3);
+  if(lastH<0)lastH+=24;
+  const last=new Date(now);
+  last.setHours(lastH,0,0,0);
+  if(last>now)last.setDate(last.getDate()-1);
+  return last;
+}
+function updateLastChargeLabel(){
+  const last=getLastChargeTime();
+  const hh=String(last.getHours()).padStart(2,'0');
+  const mm=String(last.getMinutes()).padStart(2,'0');
+  const el=document.getElementById('charge-time-label');
+  if(el)el.textContent=`최근 충전 ${hh}:${mm}`;
+}
 function scheduleEnergyUpdate(){
   const now=new Date();
   const h=now.getHours();
-  const nextSlotH=(Math.floor(h/3)+1)*3;
+  // 다음 충전 슬롯 (h%3==2인 시각)
+  let nextH=h+((2-h%3+3)%3||3);
   const next=new Date(now);
-  next.setHours(nextSlotH>=24?0:nextSlotH,0,10,0); // 정각+10초
-  if(nextSlotH>=24)next.setDate(next.getDate()+1);
+  next.setHours(nextH>=24?nextH-24:nextH,0,10,0);
+  if(nextH>=24)next.setDate(next.getDate()+1);
   const ms=next-now;
   setTimeout(()=>{
     applyEnergy(data);
     data.savedAt=Date.now();
     lsSet('aion2-local',JSON.stringify(data));
+    updateLastChargeLabel();
     document.querySelectorAll('.icon-energy').forEach(el=>{
       const ai=parseInt(el.dataset.ai),ci=parseInt(el.dataset.ci);
       if(isNaN(ai)||isNaN(ci))return;
@@ -717,12 +750,13 @@ function scheduleEnergyUpdate(){
       el.className='icon-energy'+(ecls?' '+ecls:'');
       el.textContent=e>=840?'MAX':e;
     });
-    scheduleEnergyUpdate(); // 다음 슬롯 예약
+    scheduleEnergyUpdate();
   },ms);
 }
 scheduleEnergyUpdate();
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+updateLastChargeLabel();
 </script>
 </body>
 </html>
