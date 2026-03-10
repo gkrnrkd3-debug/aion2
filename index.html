@@ -112,6 +112,9 @@
   .total-acc-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;padding:4px 0 3px;border-bottom:1px solid var(--gold-dim);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
   .total-acc-title .acc-total-prog{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;}
   .icon-char-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:7px;margin-bottom:3px;}
+  .total-memo{background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-family:inherit;font-size:10px;width:100%;min-width:0;padding:1px 3px;outline:none;}
+  .total-memo:focus{border-bottom-color:var(--gold);color:var(--text);}
+  .total-memo::placeholder{color:rgba(255,255,255,0.2);}
   .icon-char-name{font-size:11px;color:var(--blue);font-weight:600;width:60px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .icon-tasks{display:flex;gap:3px;align-items:center;flex:1;}
   .icon-sep{width:1px;height:14px;background:rgba(255,255,255,0.08);margin:0 1px;flex-shrink:0;}
@@ -397,12 +400,21 @@ function renderTotalView(){
       }).join('');
       const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
       const cpTag=ch.cp?`<span style="font-size:9px;font-weight:700;color:${cpColor(ch.cp)};margin-right:3px;">${ch.cp}</span>`:'';
-      html+=`<div class="icon-char-row"><div class="icon-char-name" style="width:70px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'48px':'60px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div></div>`;
+      html+=`<div class="icon-char-row"><div class="icon-char-name" style="width:70px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'48px':'60px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
     });
     html+=`</div>`;
   });
   html+=`<div class="total-legend"><span>📜사명 🌀어비스 💀악몽 ⚡에너지</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간: ⚔️각성 🏰토벌 🛒에너지구매</span></div>`;
   main.innerHTML=html;
+  // 메모 입력 이벤트
+  main.querySelectorAll('.total-memo').forEach(el=>{
+    el.addEventListener('change',e=>{
+      const ai=parseInt(e.target.dataset.ai),ci=parseInt(e.target.dataset.ci);
+      data.accounts[ai].chars[ci].totalMemo=e.target.value;
+      save();
+    });
+    el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
+  });
 }
 
 function renderCharView(){
@@ -577,9 +589,12 @@ window._editEnergy=(ai,ci,el)=>{
   down.addEventListener('mousedown',e=>e.preventDefault());
   down.addEventListener('click',e=>{
     e.stopPropagation();
-    confirmed=true;
+    // 닫지 않고 수치만 갱신 - 계속 눌러서 차감 가능
     const v=Math.max(0,Math.min(840,(parseInt(input.value)||0)-80));
-    input.value=v;ch.state['__energy']=v;save();restoreCell(v);
+    input.value=v;ch.state['__energy']=v;save();
+    // 에너지 색상만 업데이트
+    const ecls=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';
+    wrap.dataset.ecls=ecls;
   });
 
   wrap.appendChild(input);wrap.appendChild(down);
