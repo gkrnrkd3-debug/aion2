@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v44</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v48</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -316,6 +316,8 @@ function applyEnergy(d){
   d.accounts.forEach(acc=>acc.chars.forEach(ch=>{
     if(ch.state&&ch.state['__energy']!==undefined)ch.state['__energy']=calcEnergyCharge(ch.state['__energy'],ls);
   }));
+  // 충전 계산 후 savedAt을 현재 시각으로 갱신 → 중복 충전 방지
+  d.savedAt=Date.now();
 }
 function ensureDefaults(d){
   if(!d.accounts||!d.accounts.length)d.accounts=Array.from({length:5},(_,i)=>({name:'계정'+(i+1),chars:[{name:'캐릭터1',state:{},notes:''}]}));
@@ -504,12 +506,13 @@ function renderTaskListForChar(ci){
             onclick="this.select()">
           <div class="energy-val" style="cursor:default;">/ 840</div>
         </div>
-        <input class="energy-slider" type="range" min="0" max="840" step="10" value="${e}" oninput="window._seIdx(${ci},parseInt(this.value))">
+        <input class="energy-slider" type="range" min="0" max="840" step="10" value="${e}" onchange="window._seIdx(${ci},parseInt(this.value))" oninput="(()=>{const ch=data.accounts[curAcc].chars[${ci}];const e=(ch.state&&ch.state['__energy'])||0;document.querySelector('#list-char-${ci} .energy-direct').value=parseInt(this.value);document.querySelector('#list-char-${ci} .energy-fill').style.width=Math.round(parseInt(this.value)/840*100)+'%';})()">
         <div class="energy-btns" style="margin-top:4px;">
           <button class="energy-btn minus" onclick="window._aeIdx(${ci},-80)">−80</button>
           <button class="energy-btn plus" onclick="window._aeIdx(${ci},120)">+120</button>
           <button class="energy-btn full" onclick="window._seIdx(${ci},840)">MAX</button>
           <button class="energy-btn reset-e" onclick="window._seIdx(${ci},0)">초기화</button>
+          <button class="energy-btn" onclick="window._undoEnergy(${ci})" style="color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.15);">↩</button>
         </div></div>`;
     } else {
       const done=!!(ch.state&&ch.state[task.id]);
@@ -535,8 +538,53 @@ function toggle(id){toggleIdx(curChar,id);}
 window._raIdx=(ci)=>{const ch=data.accounts[curAcc].chars[ci];ALL_IDS.forEach(id=>{ch.state[id]=false;});save();renderTaskListForChar(ci);renderCharTabs();renderAccTabs();showToast('초기화 완료');};
 window._ra=()=>window._raIdx(curChar);
 window._rg=()=>window._raIdx(curChar);
-window._aeIdx=(ci,d)=>{const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,(ch.state['__energy']||0)+d));save();renderTaskListForChar(ci);};
-window._seIdx=(ci,v)=>{const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};ch.state['__energy']=Math.max(0,Math.min(840,v||0));save();renderTaskListForChar(ci);};
+// 에너지 undo 히스토리 스택 (계정별 캐릭터별 최대 5단계)
+const energyStacks={};
+function pushEnergyHistory(accIdx,ci,val){
+  const key=accIdx+'-'+ci;
+  if(!energyStacks[key])energyStacks[key]=[];
+  energyStacks[key].push(val);
+  if(energyStacks[key].length>5)energyStacks[key].shift();
+}
+window._aeIdx=(ci,d)=>{
+  const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};
+  pushEnergyHistory(curAcc,ci,ch.state['__energy']||0);
+  ch.state['__energy']=Math.max(0,Math.min(840,(ch.state['__energy']||0)+d));
+  save();renderTaskListForChar(ci);
+};
+window._seIdx=(ci,v)=>{
+  const ch=data.accounts[curAcc].chars[ci];if(!ch.state)ch.state={};
+  pushEnergyHistory(curAcc,ci,ch.state['__energy']||0);
+  ch.state['__energy']=Math.max(0,Math.min(840,v||0));
+  save();renderTaskListForChar(ci);
+};
+// 토탈탭에서 에너지 변경 시 히스토리 저장
+function pushEnergyHistoryTotal(ai,ci,val){
+  const key=ai+'-'+ci;
+  if(!energyStacks[key])energyStacks[key]=[];
+  energyStacks[key].push(val);
+  if(energyStacks[key].length>5)energyStacks[key].shift();
+}
+window._undoEnergy=(ai,ci,isTotal)=>{
+  const accIdx=isTotal?ai:curAcc;
+  const ch=data.accounts[accIdx].chars[ci];if(!ch.state)ch.state={};
+  const key=accIdx+'-'+ci;
+  const stack=energyStacks[key];
+  if(!stack||!stack.length){showToast('되돌릴 기록 없음');return;}
+  ch.state['__energy']=stack.pop();
+  save();
+  if(isTotal){
+    // 토탈탭: 해당 셀만 업데이트
+    const v=ch.state['__energy'];
+    const ecls=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';
+    const el=document.querySelector(`.icon-energy[data-ai="${accIdx}"][data-ci="${ci}"]`);
+    if(el){el.className='icon-energy'+(ecls?' '+ecls:'');el.textContent=v>=840?'MAX':v;}
+    renderAccTabs();
+  } else {
+    renderTaskListForChar(ci);
+  }
+  showToast('↩ 되돌림 ('+(stack.length)+'단계 남음)');
+};
 window._ae=(d)=>window._aeIdx(curChar,d);
 window._se=(v)=>window._seIdx(curChar,v);
 window._delChar=(ci)=>{const acc=data.accounts[curAcc];if(acc.chars.length<=1)return;acc.chars.splice(ci,1);save();render();showToast('캐릭터 삭제됨');};
@@ -577,21 +625,34 @@ window._editEnergy=(ai,ci,el)=>{
   function confirm(){
     if(confirmed)return;confirmed=true;
     const v=Math.max(0,Math.min(840,parseInt(input.value)||0));
+    pushEnergyHistoryTotal(ai,ci,cur);
     ch.state['__energy']=v;save();restoreCell(v);
   }
 
   down.addEventListener('mousedown',e=>e.preventDefault());
   down.addEventListener('click',e=>{
     e.stopPropagation();
-    // 닫지 않고 수치만 갱신 - 계속 눌러서 차감 가능
+    pushEnergyHistoryTotal(ai,ci,ch.state['__energy']||0);
     const v=Math.max(0,Math.min(840,(parseInt(input.value)||0)-80));
     input.value=v;ch.state['__energy']=v;save();
-    // 에너지 색상만 업데이트
     const ecls=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';
     wrap.dataset.ecls=ecls;
   });
 
-  wrap.appendChild(input);wrap.appendChild(down);
+  const undo=document.createElement('button');
+  undo.textContent='↩';
+  undo.style.cssText='background:none;border:1px solid rgba(255,255,255,0.15);border-radius:4px;color:rgba(255,255,255,0.4);font-size:9px;padding:0 4px;cursor:pointer;flex-shrink:0;';
+  undo.addEventListener('mousedown',e=>e.preventDefault());
+  undo.addEventListener('click',e=>{
+    e.stopPropagation();
+    const key=ai+'-'+ci;
+    const stack=energyStacks[key];
+    if(!stack||!stack.length){showToast('되돌릴 기록 없음');return;}
+    const prev=stack.pop();
+    input.value=prev;ch.state['__energy']=prev;save();
+    showToast('↩ 되돌림'+(stack.length?` (${stack.length}단계 남음)`:''));
+  });
+  wrap.appendChild(input);wrap.appendChild(down);wrap.appendChild(undo);
   el.replaceWith(wrap);
   input.focus();input.select();
 
