@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v48</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v49</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -768,7 +768,7 @@ function startPolling(){
   setInterval(async()=>{
     try{
       const r=await fbGet();
-      if(r&&(!data.savedAt||(r.savedAt&&r.savedAt>data.savedAt+2000))){
+      if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
         data=r;applyEnergy(data);ensureDefaults(data);autoReset();render();showToast('🔄 다른 기기에서 업데이트됨');
       }
       setSyncStatus('online');
@@ -816,18 +816,25 @@ function scheduleEnergyUpdate(){
   if(nextH>=24)next.setDate(next.getDate()+1);
   const ms=next-now;
   setTimeout(()=>{
-    applyEnergy(data);
-    data.savedAt=Date.now();
+    applyEnergy(data);       // savedAt도 내부에서 갱신됨
+    try{autoReset();}catch(e){}  // 어비스 등 시간 기반 초기화도 체크
     lsSet('aion2-local',JSON.stringify(data));
+    // Firebase에도 저장 (폴링으로 덮어씌워지는 것 방지)
+    fbSet(data).catch(()=>{});
     updateLastChargeLabel();
-    document.querySelectorAll('.icon-energy').forEach(el=>{
-      const ai=parseInt(el.dataset.ai),ci=parseInt(el.dataset.ci);
-      if(isNaN(ai)||isNaN(ci))return;
-      const e=(data.accounts[ai]?.chars[ci]?.state?.['__energy'])||0;
-      const ecls=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
-      el.className='icon-energy'+(ecls?' '+ecls:'');
-      el.textContent=e>=840?'MAX':e;
-    });
+    // 현재 뷰가 토탈탭이면 에너지 셀만 갱신, 캐릭터탭이면 전체 render
+    if(curAcc===-1){
+      document.querySelectorAll('.icon-energy').forEach(el=>{
+        const ai=parseInt(el.dataset.ai),ci=parseInt(el.dataset.ci);
+        if(isNaN(ai)||isNaN(ci))return;
+        const e=(data.accounts[ai]?.chars[ci]?.state?.['__energy'])||0;
+        const ecls=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
+        el.className='icon-energy'+(ecls?' '+ecls:'');
+        el.textContent=e>=840?'MAX':e;
+      });
+    } else {
+      render();
+    }
     scheduleEnergyUpdate();
   },ms);
 }
