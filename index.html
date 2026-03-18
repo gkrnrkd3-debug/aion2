@@ -140,6 +140,9 @@
   @keyframes spin{to{transform:rotate(360deg);}}
   .loading-text{font-size:13px;color:var(--muted);}
 </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
 <script>
@@ -155,7 +158,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v50</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v52</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -187,21 +190,28 @@ if('serviceWorker' in navigator){
 
 <div class="toast" id="toast"></div>
 <script>
-const DB_URL='https://aion2-9469f-default-rtdb.firebaseio.com/aion2.json';
+// Firebase SDK 초기화
+firebase.initializeApp({
+  apiKey:"AIzaSyCmbUxkL2_0XgpIXgcIGOGsHK5Q3IykeGg",
+  authDomain:"aion2-9469f.firebaseapp.com",
+  databaseURL:"https://aion2-9469f-default-rtdb.firebaseio.com",
+  projectId:"aion2-9469f",
+  storageBucket:"aion2-9469f.firebasestorage.app",
+  messagingSenderId:"654830276839",
+  appId:"1:654830276839:web:3d5967cb9d7934cd2ed242"
+});
+const db=firebase.database();
 const DB_KEY='aion2';
+const fbRef=db.ref(DB_KEY);
 
 async function fbGet(){
-  const controller=new AbortController();
-  const tid=setTimeout(()=>controller.abort(),3000);
-  try{
-    const r=await fetch(DB_URL,{signal:controller.signal});
-    clearTimeout(tid);
-    if(!r.ok)throw new Error('fetch fail');
-    return await r.json();
-  }catch(e){clearTimeout(tid);throw e;}
+  return new Promise((res,rej)=>{
+    const tid=setTimeout(()=>rej(new Error('timeout')),5000);
+    fbRef.once('value',snap=>{clearTimeout(tid);res(snap.val());},e=>{clearTimeout(tid);rej(e);});
+  });
 }
-async function fbSet(data){
-  await fetch(DB_URL,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+async function fbSet(d){
+  return fbRef.set(d);
 }
 
 // 3. 주간 항목을 daily에 통합 (weekly:true 플래그)
@@ -759,41 +769,42 @@ if('serviceWorker' in navigator){
 
 try{const s=lsGet('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
 try{autoReset();}catch(e){}
-// autoReset 결과를 즉시 로컬+Firebase에 저장 (다른 기기가 덮어쓰는 것 방지)
-data.savedAt=Date.now();
+// autoReset 결과 로컬에만 저장 (Firebase는 사용자 액션 시에만 저장)
 lsSet('aion2-local',JSON.stringify(data));
-fbSet(data).catch(()=>{});
 render();
 document.getElementById('loading').style.display='none';
 
-// Firebase는 백그라운드에서 연결 시도
-// 폴링 함수 - 연결 성공/실패 관계없이 항상 시작
-function startPolling(){
-  setInterval(async()=>{
-    try{
-      const r=await fbGet();
-      if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
-        data=r;applyEnergy(data);ensureDefaults(data);autoReset();render();showToast('🔄 다른 기기에서 업데이트됨');
-      }
-      setSyncStatus('online');
-    }catch(e){setSyncStatus('');}
-  },15000); // 15초마다 (더 자주)
-}
-
-fbGet().then(val=>{
-  // 로컬 autoReset으로 갱신된 savedAt이 Firebase보다 크면 덮어쓰지 않음
+// Firebase SDK 실시간 리스너
+fbRef.once('value', snap=>{
+  const val=snap.val();
   if(val&&val.savedAt&&val.savedAt>data.savedAt){
     data=val;applyEnergy(data);ensureDefaults(data);autoReset();
-    data.savedAt=Date.now();
     lsSet('aion2-local',JSON.stringify(data));
-    fbSet(data).catch(()=>{});
     render();
   }
   setSyncStatus('online');
-  startPolling();
+  // 실시간 리스너 등록 (다른 기기 변경 즉시 반영)
+  fbRef.on('value', snap=>{
+    const r=snap.val();
+    if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
+      data=r;applyEnergy(data);ensureDefaults(data);autoReset();
+      lsSet('aion2-local',JSON.stringify(data));
+      render();showToast('🔄 다른 기기에서 업데이트됨');
+    }
+    setSyncStatus('online');
+  });
 }).catch(()=>{
   setSyncStatus('');
-  startPolling();
+  // 연결 실패해도 리스너 등록 시도
+  fbRef.on('value', snap=>{
+    const r=snap.val();
+    if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
+      data=r;applyEnergy(data);ensureDefaults(data);autoReset();
+      lsSet('aion2-local',JSON.stringify(data));
+      render();showToast('🔄 다른 기기에서 업데이트됨');
+    }
+    setSyncStatus('online');
+  });
 });
 
 // 충전 시각(0,3,6,9,12,15,18,21시) 정각에만 에너지 업데이트
