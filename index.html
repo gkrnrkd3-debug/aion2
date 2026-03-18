@@ -155,7 +155,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v49</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v50</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -759,6 +759,10 @@ if('serviceWorker' in navigator){
 
 try{const s=lsGet('aion2-local');if(s){data=JSON.parse(s);applyEnergy(data);ensureDefaults(data);}else ensureDefaults(data);}catch(e){ensureDefaults(data);}
 try{autoReset();}catch(e){}
+// autoReset 결과를 즉시 로컬+Firebase에 저장 (다른 기기가 덮어쓰는 것 방지)
+data.savedAt=Date.now();
+lsSet('aion2-local',JSON.stringify(data));
+fbSet(data).catch(()=>{});
 render();
 document.getElementById('loading').style.display='none';
 
@@ -777,14 +781,19 @@ function startPolling(){
 }
 
 fbGet().then(val=>{
-  if(val&&(!data.savedAt||(val.savedAt&&val.savedAt>data.savedAt))){
-    data=val;applyEnergy(data);ensureDefaults(data);autoReset();render();
+  // 로컬 autoReset으로 갱신된 savedAt이 Firebase보다 크면 덮어쓰지 않음
+  if(val&&val.savedAt&&val.savedAt>data.savedAt){
+    data=val;applyEnergy(data);ensureDefaults(data);autoReset();
+    data.savedAt=Date.now();
+    lsSet('aion2-local',JSON.stringify(data));
+    fbSet(data).catch(()=>{});
+    render();
   }
   setSyncStatus('online');
   startPolling();
 }).catch(()=>{
   setSyncStatus('');
-  startPolling(); // 첫 연결 실패해도 폴링은 시작
+  startPolling();
 });
 
 // 충전 시각(0,3,6,9,12,15,18,21시) 정각에만 에너지 업데이트
