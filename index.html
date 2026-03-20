@@ -158,7 +158,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v55</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v57</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -286,9 +286,7 @@ function autoReset(){
   const lastDayTs=lastDay.getTime();
   const savedDayTs=parseInt(lsGet('aion2-day-ts')||'0');
   if(savedDayTs < lastDayTs){
-    if(savedDayTs > 0 || data.savedAt){
-      data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr1','dr5'].forEach(id=>{ch.state[id]=false;})));
-    }
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr1','dr5'].forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-day-ts', String(lastDayTs));
   }
   // 어비스 회랑: 화목토 21:00 (timestamp 방식)
@@ -298,9 +296,7 @@ function autoReset(){
   const laTs=la.getTime();
   const savedAkTs=parseInt(lsGet('aion2-abyss-ts')||'0');
   if(savedAkTs < laTs){
-    if(savedAkTs > 0 || data.savedAt){
-      data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
-    }
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
     lsSet('aion2-abyss-ts', String(laTs));
   }
   // 주간: 수요일 05:00 초기화 (로컬 시간 기준)
@@ -314,22 +310,36 @@ function autoReset(){
   const lastWedTs=lastWed.getTime();
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
   if(savedWkTs < lastWedTs){
-    if(savedWkTs > 0 || data.savedAt){
-      data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
-    }
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-week-ts', String(lastWedTs));
   }
 }
 
+function getLastChargeSlot(){
+  // 현재 시각 기준 가장 최근 충전 슬롯 시각 반환
+  const now=new Date();
+  const h=now.getHours();
+  const lastH=h-((h-2+24)%3);
+  const last=new Date(now);
+  last.setHours(lastH<0?lastH+24:lastH,0,0,0);
+  if(last>now)last.setDate(last.getDate()-1);
+  return last.getTime();
+}
 function applyEnergy(d){
-  const ls=d.savedAt||null;
+  // localStorage의 마지막 충전 슬롯 기준으로 계산 (Firebase 덮어쓰기 영향 없음)
+  const savedSlotMs=parseInt(lsGet('aion2-last-charge-slot')||'0');
+  const fromMs=savedSlotMs||d.savedAt||null;
+  if(!fromMs)return;
   d.accounts.forEach(acc=>acc.chars.forEach(ch=>{
-    if(ch.state&&ch.state['__energy']!==undefined)ch.state['__energy']=calcEnergyCharge(ch.state['__energy'],ls);
+    if(ch.state&&ch.state['__energy']!==undefined)
+      ch.state['__energy']=calcEnergyCharge(ch.state['__energy'],fromMs);
   }));
-  // savedAt 갱신 안 함 → Firebase 비교에 쓰이므로 원본 유지
+  // 충전 후 마지막 슬롯 시각 갱신
+  lsSet('aion2-last-charge-slot',String(getLastChargeSlot()));
 }
 function ensureDefaults(d){
   if(!d.accounts||!d.accounts.length)d.accounts=Array.from({length:5},(_,i)=>({name:'계정'+(i+1),chars:[{name:'캐릭터1',state:{},notes:''}]}));
+  if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
@@ -683,19 +693,23 @@ try{const s=lsGet('aion2-local');if(s){const local=JSON.parse(s);localSavedAt=lo
 function saveLocal(){data.savedAt=Date.now();lsSet('aion2-local',JSON.stringify(data));}
 
 // ---- 공략집 메모장 ----
-const MEMO_KEY='aion2-memos';
 let memos=[];
 let curMemo=0;
 let isMemoMode=false;
-let memoSaveTimer=null;
 
 function loadMemos(){
-  try{const s=lsGet(MEMO_KEY);if(s)memos=JSON.parse(s);}catch(e){}
-  if(!memos.length)memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
+  // data.memos 에서 불러옴 (Firebase 동기화 대상)
+  if(data.memos&&data.memos.length){
+    memos=data.memos;
+  } else {
+    memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
+    data.memos=memos;
+  }
 }
 function saveMemos(){
-  clearTimeout(memoSaveTimer);
-  memoSaveTimer=setTimeout(()=>lsSet(MEMO_KEY,JSON.stringify(memos)),500);
+  // data.memos 에 저장 후 save() 호출 → Firebase까지 동기화
+  data.memos=memos;
+  save();
 }
 function toggleMemo(){
   isMemoMode=!isMemoMode;
@@ -792,8 +806,10 @@ fbRef.once('value', snap=>{
   if(val&&val.savedAt&&val.savedAt>localSavedAt){
     // Firebase 데이터는 저장 당시 에너지가 이미 반영된 상태 → applyEnergy 하지 않음
     data=val;ensureDefaults(data);autoReset();
+    memos=data.memos;  // 메모도 갱신
     lsSet('aion2-local',JSON.stringify(data));
     render();
+    if(isMemoMode)renderMemoTabs();
   }
   setSyncStatus('online');
   // 실시간 리스너 등록 (다른 기기 변경 즉시 반영)
@@ -801,8 +817,11 @@ fbRef.once('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
       data=r;ensureDefaults(data);autoReset();
+      memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
-      render();showToast('🔄 다른 기기에서 업데이트됨');
+      render();
+      if(isMemoMode)renderMemoTabs();
+      showToast('🔄 다른 기기에서 업데이트됨');
     }
     setSyncStatus('online');
   });
@@ -812,8 +831,11 @@ fbRef.once('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
       data=r;ensureDefaults(data);autoReset();
+      memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
-      render();showToast('🔄 다른 기기에서 업데이트됨');
+      render();
+      if(isMemoMode)renderMemoTabs();
+      showToast('🔄 다른 기기에서 업데이트됨');
     }
     setSyncStatus('online');
   });
@@ -848,8 +870,8 @@ function scheduleEnergyUpdate(){
   if(nextH>=24)next.setDate(next.getDate()+1);
   const ms=next-now;
   setTimeout(()=>{
-    applyEnergy(data);
-    data.savedAt=Date.now();  // 충전 후 savedAt 갱신 → 중복충전 방지 + Firebase에 최신으로 저장
+    applyEnergy(data);  // 내부에서 lastChargeSlot 갱신
+    data.savedAt=Date.now();
     try{autoReset();}catch(e){}
     lsSet('aion2-local',JSON.stringify(data));
     fbSet(data).catch(()=>{});
