@@ -158,7 +158,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v57</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v61</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -325,10 +325,18 @@ function getLastChargeSlot(){
   if(last>now)last.setDate(last.getDate()-1);
   return last.getTime();
 }
-function applyEnergy(d){
-  // localStorage의 마지막 충전 슬롯 기준으로 계산 (Firebase 덮어쓰기 영향 없음)
+function applyEnergy(d, forceFromMs){
+  // forceFromMs: Firebase 데이터 받을 때 d.savedAt과 lastChargeSlot 중 더 오래된 값 사용
   const savedSlotMs=parseInt(lsGet('aion2-last-charge-slot')||'0');
-  const fromMs=savedSlotMs||d.savedAt||null;
+  let fromMs;
+  if(forceFromMs!==undefined){
+    // Firebase 데이터 받을 때: lastChargeSlot과 Firebase.savedAt 중 더 최신 것을 from으로
+    // → 이미 충전된 슬롯은 건너뜀 (이중충전 방지)
+    // → 단, Firebase 데이터가 lastChargeSlot보다 오래됐으면 Firebase.savedAt 기준으로 재계산
+    fromMs=savedSlotMs&&savedSlotMs>forceFromMs ? savedSlotMs : forceFromMs;
+  } else {
+    fromMs=savedSlotMs||d.savedAt||null;
+  }
   if(!fromMs)return;
   d.accounts.forEach(acc=>acc.chars.forEach(ch=>{
     if(ch.state&&ch.state['__energy']!==undefined)
@@ -800,12 +808,30 @@ lsSet('aion2-local',JSON.stringify(data));
 render();
 document.getElementById('loading').style.display='none';
 
+
+// Firebase 데이터 병합: savedAt은 Firebase 기준, 에너지는 더 큰 값 유지
+function mergeFirebaseData(remote){
+  if(!data.accounts||!remote.accounts)return remote;
+  const merged=JSON.parse(JSON.stringify(remote));
+  try{
+    merged.accounts.forEach((acc,ai)=>{
+      acc.chars.forEach((ch,ci)=>{
+        const localE=data.accounts[ai]?.chars[ci]?.state?.['__energy'];
+        const remoteE=ch.state?.['__energy'];
+        if(localE!==undefined&&remoteE!==undefined&&localE>remoteE){
+          merged.accounts[ai].chars[ci].state['__energy']=localE;
+        }
+      });
+    });
+  }catch(e){}
+  return merged;
+}
 // Firebase SDK 실시간 리스너
 fbRef.once('value', snap=>{
   const val=snap.val();
   if(val&&val.savedAt&&val.savedAt>localSavedAt){
     // Firebase 데이터는 저장 당시 에너지가 이미 반영된 상태 → applyEnergy 하지 않음
-    data=val;ensureDefaults(data);autoReset();
+    data=val;applyEnergy(data, val.savedAt);ensureDefaults(data);autoReset();
     memos=data.memos;  // 메모도 갱신
     lsSet('aion2-local',JSON.stringify(data));
     render();
@@ -816,7 +842,7 @@ fbRef.once('value', snap=>{
   fbRef.on('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
-      data=r;ensureDefaults(data);autoReset();
+      data=mergeFirebaseData(r);applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset();
       memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
       render();
@@ -830,7 +856,7 @@ fbRef.once('value', snap=>{
   fbRef.on('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
-      data=r;ensureDefaults(data);autoReset();
+      data=mergeFirebaseData(r);applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset();
       memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
       render();
