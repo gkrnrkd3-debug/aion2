@@ -158,7 +158,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v61</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v62</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -886,23 +886,15 @@ function updateLastChargeLabel(){
   const el=document.getElementById('charge-time-label');
   if(el)el.textContent=`최근 충전 ${hh}:${mm}`;
 }
-function scheduleEnergyUpdate(){
-  const now=new Date();
-  const h=now.getHours();
-  // 다음 충전 슬롯 (h%3==2인 시각)
-  let nextH=h+((2-h%3+3)%3||3);
-  const next=new Date(now);
-  next.setHours(nextH>=24?nextH-24:nextH,0,10,0);
-  if(nextH>=24)next.setDate(next.getDate()+1);
-  const ms=next-now;
-  setTimeout(()=>{
-    applyEnergy(data);  // 내부에서 lastChargeSlot 갱신
+function doEnergyCharge(){
+  // 실제 충전 실행 - 에러가 나도 scheduleEnergyUpdate는 반드시 재호출
+  try{
+    applyEnergy(data);
     data.savedAt=Date.now();
     try{autoReset();}catch(e){}
     lsSet('aion2-local',JSON.stringify(data));
     fbSet(data).catch(()=>{});
     updateLastChargeLabel();
-    // 현재 뷰가 토탈탭이면 에너지 셀만 갱신, 캐릭터탭이면 전체 render
     if(curAcc===-1){
       document.querySelectorAll('.icon-energy').forEach(el=>{
         const ai=parseInt(el.dataset.ai),ci=parseInt(el.dataset.ci);
@@ -915,9 +907,30 @@ function scheduleEnergyUpdate(){
     } else {
       render();
     }
-    scheduleEnergyUpdate();
+  }catch(e){console.error('doEnergyCharge error:',e);}
+}
+function scheduleEnergyUpdate(){
+  const now=new Date();
+  const h=now.getHours();
+  let nextH=h+((2-h%3+3)%3||3);
+  const next=new Date(now);
+  next.setHours(nextH>=24?nextH-24:nextH,0,10,0);
+  if(nextH>=24)next.setDate(next.getDate()+1);
+  const ms=next-now;
+  setTimeout(()=>{
+    doEnergyCharge();
+    scheduleEnergyUpdate(); // 에러 여부와 무관하게 반드시 재호출
   },ms);
 }
+// 백업: 1분마다 lastChargeSlot 체크해서 놓친 충전 보정
+setInterval(()=>{
+  const slot=parseInt(lsGet('aion2-last-charge-slot')||'0');
+  const currentSlot=getLastChargeSlot();
+  if(currentSlot>slot){
+    // 타이머가 놓친 슬롯이 있으면 지금 충전
+    doEnergyCharge();
+  }
+},60000);
 scheduleEnergyUpdate();
 
 document.getElementById('today-date').textContent=new Date().toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
