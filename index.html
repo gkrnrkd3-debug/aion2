@@ -158,7 +158,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v65</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v67</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -265,6 +265,7 @@ function calcEnergyCharge(stored,lastMs){
 }
 
 function save(){
+  try{autoReset();}catch(e){}  // 저장 전 초기화 체크 → Firebase에 항상 초기화된 상태 저장
   data.savedAt=Date.now();
   lsSet('aion2-local',JSON.stringify(data));
   setSyncStatus('syncing');clearTimeout(saveTimer);
@@ -277,8 +278,7 @@ function save(){
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
-function autoReset(force){
-  // force=true: Firebase 데이터 받은 후 → ts 무시하고 현재 시각 기준 강제 초기화
+function autoReset(){
   const now=new Date();
 
   // 사명임무·악몽던전: 매일 05:00
@@ -287,7 +287,7 @@ function autoReset(force){
   lastDay.setHours(5,0,0,0);
   const lastDayTs=lastDay.getTime();
   const savedDayTs=parseInt(lsGet('aion2-day-ts')||'0');
-  if(force || savedDayTs < lastDayTs){
+  if(savedDayTs < lastDayTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr1','dr5'].forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-day-ts', String(lastDayTs));
   }
@@ -298,7 +298,7 @@ function autoReset(force){
   const la=lastAbyss(now)||new Date(0);
   const laTs=la.getTime();
   const savedAkTs=parseInt(lsGet('aion2-abyss-ts')||'0');
-  if(force || savedAkTs < laTs){
+  if(savedAkTs < laTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
     lsSet('aion2-abyss-ts', String(laTs));
   }
@@ -311,7 +311,7 @@ function autoReset(force){
   if(lastWed>now) lastWed.setDate(lastWed.getDate()-7);
   const lastWedTs=lastWed.getTime();
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
-  if(force || savedWkTs < lastWedTs){
+  if(savedWkTs < lastWedTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-week-ts', String(lastWedTs));
   }
@@ -818,7 +818,7 @@ fbRef.once('value', snap=>{
   if(val&&val.savedAt&&val.savedAt>localSavedAt){
     // Firebase 데이터는 저장 당시 에너지가 이미 반영된 상태 → applyEnergy 하지 않음
     // Firebase값 기준으로 교체 + 자동충전분 반영
-    data=val;applyEnergy(data, val.savedAt);ensureDefaults(data);autoReset(true);
+    data=val;applyEnergy(data, val.savedAt);ensureDefaults(data);autoReset();
     memos=data.memos;  // 메모도 갱신
     lsSet('aion2-local',JSON.stringify(data));
     render();
@@ -830,7 +830,7 @@ fbRef.once('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
       // Firebase값 기준으로 교체 + 자동충전분 반영
-      data=r;applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset(true);
+      data=r;applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset();
       memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
       render();
@@ -845,7 +845,7 @@ fbRef.once('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
       // Firebase값 기준으로 교체 + 자동충전분 반영
-      data=r;applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset(true);
+      data=r;applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset();
       memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
       render();
