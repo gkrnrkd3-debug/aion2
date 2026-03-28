@@ -158,7 +158,7 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v67</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v68</span></div></div>
     </a>
     <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
       <span style="font-size:18px;">🔄</span>
@@ -327,18 +327,10 @@ function getLastChargeSlot(){
   if(last>now)last.setDate(last.getDate()-1);
   return last.getTime();
 }
-function applyEnergy(d, forceFromMs){
-  // forceFromMs: Firebase 데이터 받을 때 d.savedAt과 lastChargeSlot 중 더 오래된 값 사용
+function applyEnergy(d){
+  // 앱 시작 시 or 타이머에서만 호출 (Firebase 받을 때 X)
   const savedSlotMs=parseInt(lsGet('aion2-last-charge-slot')||'0');
-  let fromMs;
-  if(forceFromMs!==undefined){
-    // Firebase 데이터 받을 때: lastChargeSlot과 Firebase.savedAt 중 더 최신 것을 from으로
-    // → 이미 충전된 슬롯은 건너뜀 (이중충전 방지)
-    // → 단, Firebase 데이터가 lastChargeSlot보다 오래됐으면 Firebase.savedAt 기준으로 재계산
-    fromMs=savedSlotMs&&savedSlotMs>forceFromMs ? savedSlotMs : forceFromMs;
-  } else {
-    fromMs=savedSlotMs||d.savedAt||null;
-  }
+  const fromMs=savedSlotMs||d.savedAt||null;
   if(!fromMs)return;
   d.accounts.forEach(acc=>acc.chars.forEach(ch=>{
     if(ch.state&&ch.state['__energy']!==undefined)
@@ -346,6 +338,39 @@ function applyEnergy(d, forceFromMs){
   }));
   // 충전 후 마지막 슬롯 시각 갱신
   lsSet('aion2-last-charge-slot',String(getLastChargeSlot()));
+}
+
+// Firebase 수동 수정 에너지 반영: 각 캐릭터 에너지를 Firebase값으로 교체 + lastChargeSlot 재설정
+function applyFirebaseEnergy(remote){
+  if(!remote||!remote.accounts)return;
+  try{
+    remote.accounts.forEach((acc,ai)=>{
+      acc.chars.forEach((ch,ci)=>{
+        const remoteE=ch.state?.['__energy'];
+        if(remoteE!==undefined && data.accounts[ai]?.chars[ci]?.state){
+          data.accounts[ai].chars[ci].state['__energy']=remoteE;
+        }
+      });
+    });
+    // lastChargeSlot을 Firebase.savedAt 기준 슬롯으로 재설정
+    // → 다음 타이머가 Firebase 저장 이후부터 충전 계산
+    if(remote.savedAt){
+      const remoteSlot=getLastChargeSlotAt(new Date(remote.savedAt));
+      const localSlot=parseInt(lsGet('aion2-last-charge-slot')||'0');
+      // 더 최신 슬롯으로 설정 (이미 로컬에서 더 많이 충전됐을 수도 있으므로)
+      if(remoteSlot>localSlot){
+        lsSet('aion2-last-charge-slot',String(remoteSlot));
+      }
+    }
+  }catch(e){}
+}
+function getLastChargeSlotAt(dateObj){
+  const h=dateObj.getHours();
+  const lastH=h-((h-2+24)%3);
+  const last=new Date(dateObj);
+  last.setHours(lastH<0?lastH+24:lastH,0,0,0);
+  if(last>dateObj)last.setDate(last.getDate()-1);
+  return last.getTime();
 }
 function ensureDefaults(d){
   if(!d.accounts||!d.accounts.length)d.accounts=Array.from({length:5},(_,i)=>({name:'계정'+(i+1),chars:[{name:'캐릭터1',state:{},notes:''}]}));
@@ -818,7 +843,7 @@ fbRef.once('value', snap=>{
   if(val&&val.savedAt&&val.savedAt>localSavedAt){
     // Firebase 데이터는 저장 당시 에너지가 이미 반영된 상태 → applyEnergy 하지 않음
     // Firebase값 기준으로 교체 + 자동충전분 반영
-    data=val;applyEnergy(data, val.savedAt);ensureDefaults(data);autoReset();
+    data=val;ensureDefaults(data);autoReset();applyFirebaseEnergy(val);
     memos=data.memos;  // 메모도 갱신
     lsSet('aion2-local',JSON.stringify(data));
     render();
@@ -830,7 +855,7 @@ fbRef.once('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
       // Firebase값 기준으로 교체 + 자동충전분 반영
-      data=r;applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset();
+      data=r;ensureDefaults(data);autoReset();applyFirebaseEnergy(r);
       memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
       render();
@@ -845,7 +870,7 @@ fbRef.once('value', snap=>{
     const r=snap.val();
     if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
       // Firebase값 기준으로 교체 + 자동충전분 반영
-      data=r;applyEnergy(data, r.savedAt);ensureDefaults(data);autoReset();
+      data=r;ensureDefaults(data);autoReset();applyFirebaseEnergy(r);
       memos=data.memos;  // 메모도 갱신
       lsSet('aion2-local',JSON.stringify(data));
       render();
