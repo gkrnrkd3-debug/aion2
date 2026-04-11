@@ -226,14 +226,13 @@ const TASKS=[
   {id:'dr4',name:'오드에너지',desc:'00시 기준 3시간마다 +15 자동충전',count:'최대 840',type:'energy'},
   {id:'dr5',name:'악몽 던전',desc:'몽환의 파편 획득 — 매일 2회 충전, 최대 14회',count:'2회/일'},
   {id:'wd1',name:'각성전',desc:'주간 3회 · 수요일 05:00 초기화',count:'3회/주',weekly:true},
-  {id:'wd2',name:'토벌전',desc:'주간 총합 3회 · 수요일 05:00 초기화',count:'3회/주',weekly:true},
   {id:'wd4',name:'오드에너지 구매',desc:'주간 · 수요일 05:00 초기화',count:'주간',weekly:true},
 ];
 const DAILY_IDS=TASKS.filter(t=>!t.type&&!t.weekly).map(t=>t.id);
 const WEEKLY_IDS=TASKS.filter(t=>t.weekly).map(t=>t.id);
 const ALL_IDS=TASKS.filter(t=>!t.type).map(t=>t.id);
-// 5. 진행도 카운팅: 각성전+토벌전만
-const COUNT_IDS=['wd1','wd2'];
+// 진행도 카운팅: 각성전만
+const COUNT_IDS=['wd1'];
 const TOTAL=COUNT_IDS.length;
 
 let data={accounts:[],savedAt:null};
@@ -380,7 +379,7 @@ function getLastChargeSlotAt(dateObj){
 }
 function ensureDefaults(d){
   if(!d.accounts||!d.accounts.length)d.accounts=Array.from({length:5},(_,i)=>({name:'계정'+(i+1),chars:[{name:'캐릭터1',state:{'__energy':0},notes:''}]}));
-  if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
+  if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''}];
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
@@ -460,7 +459,7 @@ function renderTotalView(){
     html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><span class="acc-total-prog" style="margin-right:${ai===0?'4px':'0'}">${ad}/${am}</span>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
-      const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd2:'🏰',wd4:'🛒'};
+      const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd4:'🛒'};
       const taskHtml=TASKS.map(t=>{
         if(t.type==='energy'){const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';return `<div class="icon-energy ${ecls}" data-ai="${ai}" data-ci="${ci}" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;}
         const done=!!(ch.state&&ch.state[t.id]);
@@ -472,7 +471,7 @@ function renderTotalView(){
     });
     html+=`</div>`;
   });
-  html+=`<div class="total-legend"><span>📜사명 🌀어비스 💀악몽 ⚡에너지</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간: ⚔️각성 🏰토벌 🛒에너지구매</span></div>`;
+  html+=`<div class="total-legend"><span>📜사명 🌀어비스 💀악몽 ⚡에너지</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간: ⚔️각성전 🛒에너지구매</span></div>`;
   main.innerHTML=html;
   // 메모 입력 이벤트
   main.querySelectorAll('.total-memo').forEach(el=>{
@@ -772,7 +771,7 @@ function loadMemos(){
   if(data.memos&&data.memos.length){
     memos=data.memos;
   } else {
-    memos=[{title:'각성전',content:''},{title:'토벌전',content:''}];
+    memos=[{title:'각성전',content:''}];
     data.memos=memos;
   }
 }
