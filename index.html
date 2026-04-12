@@ -114,7 +114,10 @@
   /* TOTAL VIEW */
   /* 7. 계정간 간격 축소 */
   .total-acc-block{margin-bottom:3px;}
-  .total-acc-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;padding:4px 0 3px;border-bottom:1px solid var(--gold-dim);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between;}
+  .total-acc-title{font-family:'Cinzel',serif;font-size:12px;font-weight:700;color:var(--gold);letter-spacing:1px;padding:4px 0 3px;border-bottom:1px solid var(--gold-dim);margin-bottom:3px;display:flex;align-items:center;gap:6px;}
+  .acc-memo-input{background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.1);outline:none;color:rgba(255,255,255,0.45);font-family:'Noto Sans KR',sans-serif;font-size:10px;font-weight:400;width:60px;padding:1px 2px;letter-spacing:0;}
+  .acc-memo-input:focus{border-bottom-color:var(--gold);color:var(--text);}
+  .acc-memo-input::placeholder{color:rgba(255,255,255,0.15);}
   .total-acc-title .acc-total-prog{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;}
   .icon-char-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:7px;margin-bottom:3px;}
   .total-memo{background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-family:inherit;font-size:10px;width:100%;min-width:0;padding:1px 3px;outline:none;}
@@ -395,12 +398,12 @@ function ensureDefaults(d){
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
 function cpColor(cp){
-  if(!cp||cp<10)return '#6a7a90';   // 회색
-  if(cp<15)return '#cd7f32';         // 브론즈
-  if(cp<18)return '#aab8c2';         // 실버
-  if(cp<20)return '#c9a84c';         // 골드
-  if(cp<25)return '#4a9edd';         // 블루
-  return '#a06af0';                   // 퍼플
+  if(!cp||cp<22)return '#6a7a90';   // 회색
+  if(cp<25)return '#aab8c2';         // 실버
+  if(cp<28)return '#4a9edd';         // 블루
+  if(cp<30)return '#d4b86a';         // 골드(연)
+  if(cp<35)return '#a06af0';         // 퍼플
+  return '#e07855';                   // 오렌지
 }
 function cpLabel(cp){
   if(!cp||cp<1)return '';
@@ -514,7 +517,7 @@ function renderTotalView(){
         <button onclick="window._allEnergy(-15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">−15</button>
         <button onclick="window._allEnergy(15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">+15</button>
       </div>`:'';
-    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><span class="acc-total-prog" style="margin-right:${ai===0?'4px':'0'}">${ad}/${am}</span>${allEnergyBtns}</div>`;
+    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><span class="acc-total-prog" style="margin-left:auto;margin-right:${ai===0?'4px':'0'}">${ad}/${am}</span>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'📜',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd4:'🛒'};
@@ -541,6 +544,14 @@ function renderTotalView(){
     el.addEventListener('change',e=>{
       const ai=parseInt(e.target.dataset.ai),ci=parseInt(e.target.dataset.ci);
       data.accounts[ai].chars[ci].totalMemo=e.target.value;
+      save();
+    });
+    el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
+  });
+  main.querySelectorAll('.acc-memo-input').forEach(el=>{
+    el.addEventListener('input',e=>{
+      const ai=parseInt(e.target.dataset.ai);
+      data.accounts[ai].memo=e.target.value;
       save();
     });
     el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
