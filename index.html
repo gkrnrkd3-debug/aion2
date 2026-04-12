@@ -133,6 +133,16 @@
   .icon-energy.e-high{color:#c9a84c;border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.1);}
   .icon-energy.e-max{color:#4ecf7a;border-color:rgba(78,207,122,0.6);background:rgba(78,207,122,0.12);box-shadow:0 0 6px rgba(78,207,122,0.3);}
   .total-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;padding:7px 10px;background:rgba(255,255,255,0.02);border-radius:7px;}
+  .link-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
+  .link-section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+  .link-card{background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:9px;padding:6px 10px;margin-bottom:5px;display:flex;align-items:center;gap:6px;}
+  .link-name-input{background:none;border:none;outline:none;color:var(--gold);font-family:inherit;font-size:11px;font-weight:700;width:44px;padding:0 2px;flex-shrink:0;}
+  .link-del-btn{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px;flex-shrink:0;line-height:1;margin-left:auto;}
+  .link-del-btn:hover{color:var(--red);}
+  .link-selects{display:flex;gap:4px;flex-wrap:wrap;flex:1;}
+  .link-select{background:var(--card2);border:1px solid rgba(255,255,255,0.08);border-radius:5px;color:var(--text);font-family:inherit;font-size:10px;padding:2px 4px;outline:none;max-width:90px;}
+  .add-link-btn{background:none;border:1px dashed rgba(201,168,76,0.25);border-radius:7px;color:rgba(201,168,76,0.5);font-family:inherit;font-size:11px;padding:5px 12px;cursor:pointer;width:100%;transition:all 0.2s;}
+  .add-link-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
   .notes-label{font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
@@ -380,6 +390,7 @@ function getLastChargeSlotAt(dateObj){
 function ensureDefaults(d){
   if(!d.accounts||!d.accounts.length)d.accounts=Array.from({length:5},(_,i)=>({name:'계정'+(i+1),chars:[{name:'캐릭터1',state:{'__energy':0},notes:''}]}));
   if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''}];
+  if(!d.links)d.links=[];
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
@@ -446,6 +457,53 @@ function renderCharTabs(){
   add.className='add-char-btn';add.textContent='+ 캐릭터 추가';add.onclick=addChar;el.appendChild(add);
 }
 
+function renderLinkSection(){
+  if(!data.links)data.links=[];
+  let html=`<div class="link-section">
+    <div class="link-section-title">
+      <span>🔗 링크 시스템</span>
+      <span style="font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;">파티 조합 메모</span>
+    </div>`;
+  if(data.links.length===0){
+    html+=`<div style="font-size:11px;color:var(--muted);padding:8px 4px 10px;font-style:italic;">링크가 없습니다. 아래 버튼으로 추가하세요.</div>`;
+  }
+  data.links.forEach((link,li)=>{
+    // 계정별 select
+    const selects=data.accounts.map((acc,ai)=>{
+      const cur=link.chars&&link.chars[ai]!==undefined?link.chars[ai]:undefined;
+      const opts=`<option value="">— ${acc.name}</option>`+acc.chars.map((ch,ci)=>`<option value="${ci}"${cur===ci?'selected':''}>${ch.name}${ch.cp?' '+ch.cp:''}</option>`).join('');
+      return `<select class="link-select" onchange="window._linkSet(${li},${ai},this.value)">${opts}</select>`;
+    }).join('');
+    html+=`<div class="link-card">
+      <input class="link-name-input" type="text" maxlength="8" value="${(link.name||'링크'+(li+1)).replace(/"/g,'&quot;')}" placeholder="링크명" oninput="window._linkRename(${li},this.value)">
+      <div class="link-selects">${selects}</div>
+      <button class="link-del-btn" onclick="window._linkDel(${li})">×</button>
+    </div>`;
+  });
+  html+=`<button class="add-link-btn" onclick="window._linkAdd()">+ 링크 추가</button></div>`;
+  return html;
+}
+
+window._linkAdd=()=>{
+  if(!data.links)data.links=[];
+  data.links.push({name:'링크'+(data.links.length+1),chars:{}});
+  save();if(curAcc===-1)renderTotalView();
+};
+window._linkDel=(li)=>{
+  data.links.splice(li,1);
+  save();if(curAcc===-1)renderTotalView();
+};
+window._linkSet=(li,ai,val)=>{
+  if(!data.links[li].chars)data.links[li].chars={};
+  if(val==='')delete data.links[li].chars[ai];
+  else data.links[li].chars[ai]=parseInt(val);
+  save();if(curAcc===-1)renderTotalView();
+};
+window._linkRename=(li,val)=>{
+  data.links[li].name=val||('링크'+(li+1));
+  save();
+};
+
 function renderTotalView(){
   const main=document.getElementById('main-content');
   let html='';
@@ -467,11 +525,16 @@ function renderTotalView(){
       }).join('');
       const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
       const cpTag=ch.cp?`<span style="font-size:9px;font-weight:700;color:${cpColor(ch.cp)};margin-right:3px;">${ch.cp}</span>`:'';
-      html+=`<div class="icon-char-row"><div class="icon-char-name" style="width:70px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'48px':'60px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
+      // 이 캐릭터가 속한 링크 찾기 (첫번째 링크 기준으로 색상)
+      const LINK_COLORS=['rgba(224,85,85,0.13)','rgba(74,158,221,0.13)','rgba(78,207,122,0.13)','rgba(160,106,240,0.13)','rgba(224,120,85,0.13)','rgba(85,200,224,0.13)','rgba(201,168,76,0.13)'];
+      const LINK_BORDER=['rgba(224,85,85,0.35)','rgba(74,158,221,0.35)','rgba(78,207,122,0.35)','rgba(160,106,240,0.35)','rgba(224,120,85,0.35)','rgba(85,200,224,0.35)','rgba(201,168,76,0.35)'];
+      const linkIdx=(data.links||[]).findIndex(lk=>lk.chars&&lk.chars[ai]===ci);
+      const rowBg=linkIdx>=0?`background:${LINK_COLORS[linkIdx%LINK_COLORS.length]};border-color:${LINK_BORDER[linkIdx%LINK_BORDER.length]};`:'';
+      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:70px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'48px':'60px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
     });
     html+=`</div>`;
   });
-  html+=`<div class="total-legend"><span>📜사명 🌀어비스 💀악몽 ⚡에너지</span><span style="color:rgba(255,255,255,0.15)">│</span><span>주간: ⚔️각성전 🛒에너지구매</span></div>`;
+  html+=renderLinkSection();
   main.innerHTML=html;
   // 메모 입력 이벤트
   main.querySelectorAll('.total-memo').forEach(el=>{
