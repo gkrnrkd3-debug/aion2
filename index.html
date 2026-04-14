@@ -190,6 +190,17 @@ if('serviceWorker' in navigator){
 <main class="main" id="main-content"></main>
 
 <!-- 공략집 메모장 화면 -->
+<style>
+  .memo-toolbar{display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;flex-wrap:wrap;}
+  .memo-sep{width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 1px;flex-shrink:0;}
+  .fmt-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:5px;color:var(--text);font-family:inherit;font-size:11px;font-weight:700;padding:3px 7px;cursor:pointer;transition:all 0.15s;line-height:1.4;user-select:none;}
+  .fmt-btn:hover{background:rgba(255,255,255,0.12);color:var(--bright);}
+  .color-dot{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,0.12);cursor:pointer;transition:transform 0.15s,border-color 0.15s;flex-shrink:0;}
+  .color-dot:hover{transform:scale(1.3);border-color:rgba(255,255,255,0.5);}
+  #memo-content{flex:1;min-height:calc(100vh - 280px);background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;color:var(--text);font-family:inherit;font-size:13px;outline:none;line-height:1.8;overflow-y:auto;word-break:break-word;}
+  #memo-content:empty::before{content:attr(data-placeholder);color:rgba(255,255,255,0.2);pointer-events:none;display:block;}
+  #memo-content:focus{border-color:rgba(201,168,76,0.2);}
+</style>
 <div id="memo-screen" style="display:none;flex-direction:column;height:calc(100vh - 90px);max-width:800px;margin:0 auto;padding:12px 16px 60px;">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
     <div style="display:flex;gap:6px;overflow-x:auto;flex:1;padding-bottom:4px;" id="memo-tabs"></div>
@@ -201,8 +212,26 @@ if('serviceWorker' in navigator){
         style="background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);outline:none;color:var(--gold);font-family:'Cinzel',serif;font-size:13px;font-weight:700;padding:2px 4px;flex:1;">
       <button onclick="deleteMemoTab()" style="background:none;border:1px solid rgba(255,255,255,0.07);border-radius:5px;color:var(--muted);font-family:inherit;font-size:11px;padding:3px 8px;cursor:pointer;">삭제</button>
     </div>
-    <textarea id="memo-content" placeholder="공략 내용을 입력하세요..."
-      style="flex:1;min-height:calc(100vh - 220px);background:var(--card);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px;color:var(--text);font-family:inherit;font-size:13px;resize:none;outline:none;line-height:1.7;"></textarea>
+    <div class="memo-toolbar">
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoSize('11px')">S</button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoSize('13px')">M</button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoSize('17px')">L</button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoSize('22px')">XL</button>
+      <div class="memo-sep"></div>
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoCmd('bold')"><b>B</b></button>
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoCmd('italic')" style="font-style:italic;">I</button>
+      <div class="memo-sep"></div>
+      <div class="color-dot" style="background:#d4c5a0;" onmousedown="event.preventDefault();memoColor('#d4c5a0')" title="기본"></div>
+      <div class="color-dot" style="background:#c9a84c;" onmousedown="event.preventDefault();memoColor('#c9a84c')" title="골드"></div>
+      <div class="color-dot" style="background:#4a9edd;" onmousedown="event.preventDefault();memoColor('#4a9edd')" title="파랑"></div>
+      <div class="color-dot" style="background:#4ecf7a;" onmousedown="event.preventDefault();memoColor('#4ecf7a')" title="초록"></div>
+      <div class="color-dot" style="background:#e05555;" onmousedown="event.preventDefault();memoColor('#e05555')" title="빨강"></div>
+      <div class="color-dot" style="background:#a06af0;" onmousedown="event.preventDefault();memoColor('#a06af0')" title="보라"></div>
+      <div class="color-dot" style="background:#e07855;" onmousedown="event.preventDefault();memoColor('#e07855')" title="주황"></div>
+      <div class="memo-sep"></div>
+      <button class="fmt-btn" onmousedown="event.preventDefault();memoCmd('removeFormat')" style="font-size:10px;color:var(--muted);" title="서식 제거">✕</button>
+    </div>
+    <div id="memo-content" contenteditable="true" data-placeholder="공략 내용을 입력하세요..."></div>
   </div>
 </div>
 
@@ -895,12 +924,35 @@ function renderMemoTabs(){
 function loadCurMemo(){
   const m=memos[curMemo];
   document.getElementById('memo-title-input').value=m.title;
-  document.getElementById('memo-content').value=m.content;
+  const el=document.getElementById('memo-content');
+  el.innerHTML=m.content||'';
 }
 function saveCurMemo(){
   memos[curMemo].title=document.getElementById('memo-title-input').value||('메모'+(curMemo+1));
-  memos[curMemo].content=document.getElementById('memo-content').value;
+  memos[curMemo].content=document.getElementById('memo-content').innerHTML;
   saveMemos();
+}
+// 서식 함수
+function memoCmd(cmd){
+  document.getElementById('memo-content').focus();
+  document.execCommand(cmd,false,null);
+  saveCurMemo();
+}
+function memoColor(color){
+  document.getElementById('memo-content').focus();
+  document.execCommand('foreColor',false,color);
+  saveCurMemo();
+}
+function memoSize(px){
+  document.getElementById('memo-content').focus();
+  // fontSize 7 trick: execCommand 후 font[size=7] 찾아서 style로 교체
+  document.execCommand('fontSize',false,'7');
+  const editor=document.getElementById('memo-content');
+  editor.querySelectorAll('font[size="7"]').forEach(el=>{
+    el.removeAttribute('size');
+    el.style.fontSize=px;
+  });
+  saveCurMemo();
 }
 function addMemoTab(){
   saveCurMemo();
@@ -916,7 +968,6 @@ function deleteMemoTab(){
 }
 document.getElementById('memo-title-input').addEventListener('input',()=>{saveCurMemo();renderMemoTabs();});
 document.getElementById('memo-content').addEventListener('input',()=>{saveCurMemo();});
-loadMemos();
 
 // 서비스워커 + 캐시 완전 삭제
 if('serviceWorker' in navigator){
@@ -940,6 +991,7 @@ try{
 }catch(e){ensureDefaults(data);}
 try{autoReset();}catch(e){}
 lsSet('aion2-local',JSON.stringify(data));
+loadMemos();
 render();
 document.getElementById('loading').style.display='none';
 
