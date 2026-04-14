@@ -969,6 +969,69 @@ function deleteMemoTab(){
 document.getElementById('memo-title-input').addEventListener('input',()=>{saveCurMemo();renderMemoTabs();});
 document.getElementById('memo-content').addEventListener('input',()=>{saveCurMemo();});
 
+// 이미지 붙여넣기
+document.getElementById('memo-content').addEventListener('paste',e=>{
+  const items=e.clipboardData&&e.clipboardData.items;
+  if(!items)return;
+  for(let i=0;i<items.length;i++){
+    if(items[i].type.startsWith('image/')){
+      e.preventDefault();
+      const file=items[i].getAsFile();
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        const img=document.createElement('img');
+        img.src=ev.target.result;
+        img.style.cssText='max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:pointer;';
+        img.title='클릭하면 삭제';
+        img.onclick=()=>{if(confirm('이미지를 삭제할까요?')){img.remove();saveCurMemoWithImg();}};
+        const sel=window.getSelection();
+        if(sel&&sel.rangeCount){
+          const range=sel.getRangeAt(0);
+          range.deleteContents();
+          range.insertNode(img);
+          range.setStartAfter(img);
+          range.collapse(true);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        } else {
+          document.getElementById('memo-content').appendChild(img);
+        }
+        saveCurMemoWithImg();
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+  }
+});
+
+// 이미지 포함 버전은 로컬스토리지에만, Firebase엔 이미지 제거 후 저장
+function saveCurMemoWithImg(){
+  const title=document.getElementById('memo-title-input').value||('메모'+(curMemo+1));
+  const htmlFull=document.getElementById('memo-content').innerHTML;
+  lsSet('aion2-memo-img-'+curMemo, htmlFull);
+  memos[curMemo].title=title;
+  const tmp=document.createElement('div');
+  tmp.innerHTML=htmlFull;
+  tmp.querySelectorAll('img').forEach(el=>el.replaceWith('[이미지]'));
+  memos[curMemo].content=tmp.innerHTML;
+  saveMemos();
+}
+
+// 탭 로드 시 로컬 이미지 복원
+const _origLoad=loadCurMemo;
+loadCurMemo=function(){
+  _origLoad();
+  const saved=lsGet('aion2-memo-img-'+curMemo);
+  if(saved){
+    document.getElementById('memo-content').innerHTML=saved;
+    document.getElementById('memo-content').querySelectorAll('img').forEach(img=>{
+      img.style.cssText='max-width:100%;border-radius:6px;margin:4px 0;display:block;cursor:pointer;';
+      img.title='클릭하면 삭제';
+      img.onclick=()=>{if(confirm('이미지를 삭제할까요?')){img.remove();saveCurMemoWithImg();}};
+    });
+  }
+};
+
 // 서비스워커 + 캐시 완전 삭제
 if('serviceWorker' in navigator){
   navigator.serviceWorker.getRegistrations().then(regs=>regs.forEach(r=>r.unregister()));
