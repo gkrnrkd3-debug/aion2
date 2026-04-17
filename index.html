@@ -148,6 +148,19 @@
   .add-link-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
+  .todo-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
+  .todo-section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+  .todo-row{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:7px;margin-bottom:4px;}
+  .todo-num{font-size:11px;font-weight:700;color:var(--gold);width:14px;text-align:center;flex-shrink:0;}
+  .todo-char-sel{background:var(--card2);border:1px solid rgba(255,255,255,0.08);border-radius:5px;color:var(--blue);font-family:inherit;font-size:11px;padding:3px 4px;outline:none;flex-shrink:0;max-width:80px;}
+  .todo-text{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:12px;min-width:0;}
+  .todo-text::placeholder{color:rgba(255,255,255,0.2);}
+  .todo-order-btns{display:flex;flex-direction:column;gap:1px;flex-shrink:0;}
+  .todo-ord-btn{background:none;border:none;color:var(--muted);font-size:9px;cursor:pointer;padding:0 2px;line-height:1.2;}
+  .todo-ord-btn:hover:not([disabled]){color:var(--gold);}
+  .todo-ord-btn[disabled]{opacity:0.2;cursor:default;}
+  .todo-del-btn{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;}
+  .todo-del-btn:hover{color:var(--red);}
   .notes-label{font-size:11px;color:var(--gold);letter-spacing:2px;margin-bottom:8px;}
   textarea{width:100%;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.06);border-radius:7px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:13px;resize:vertical;min-height:56px;outline:none;transition:border-color 0.2s;}
   textarea:focus{border-color:var(--gold-dim);}
@@ -428,6 +441,7 @@ function ensureDefaults(d){
   if(!d.accounts||!d.accounts.length)d.accounts=Array.from({length:5},(_,i)=>({name:'계정'+(i+1),chars:[{name:'캐릭터1',state:{'__energy':0},notes:''}]}));
   if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''}];
   if(!d.links)d.links=[];
+  if(!d.todos)d.todos=[];
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
@@ -541,6 +555,69 @@ window._linkRename=(li,val)=>{
   save();
 };
 
+// ---- 우선순위 할일 리스트 ----
+function ensureTodos(){if(!data.todos)data.todos=[];}
+
+function renderTodoSection(){
+  ensureTodos();
+  // 캐릭터 전체 목록 (계정명+캐릭터명)
+  const charOpts=`<option value="">— 캐릭터</option>`+data.accounts.map((acc,ai)=>
+    acc.chars.map((ch,ci)=>`<option value="${ai}-${ci}">${ch.name}</option>`).join('')
+  ).join('');
+
+  let rows='';
+  data.todos.forEach((todo,i)=>{
+    const selVal=todo.char||'';
+    rows+=`<div class="todo-row" data-i="${i}">
+      <span class="todo-num">${i+1}</span>
+      <select class="todo-char-sel" data-i="${i}" onchange="window._todoChar(${i},this.value)">${charOpts.replace(`value="${selVal}"`,`value="${selVal}" selected`)}</select>
+      <input class="todo-text" type="text" maxlength="30" placeholder="할 일 입력..." value="${(todo.text||'').replace(/"/g,'&quot;')}" data-i="${i}"
+        oninput="window._todoText(${i},this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()">
+      <div class="todo-order-btns">
+        <button class="todo-ord-btn" onclick="window._todoMove(${i},-1)" ${i===0?'disabled':''}>▲</button>
+        <button class="todo-ord-btn" onclick="window._todoMove(${i},1)" ${i===data.todos.length-1?'disabled':''}>▼</button>
+      </div>
+      <button class="todo-del-btn" onclick="window._todoDel(${i})">×</button>
+    </div>`;
+  });
+
+  return `<div class="todo-section">
+    <div class="todo-section-title">
+      <span>📋 우선순위 할 일</span>
+      <button class="add-link-btn" style="width:auto;padding:4px 12px;font-size:11px;" onclick="window._todoAdd()">+ 추가</button>
+    </div>
+    <div id="todo-list">${rows||'<div style="font-size:11px;color:var(--muted);padding:6px 2px;font-style:italic;">할 일이 없습니다.</div>'}</div>
+  </div>`;
+}
+
+window._todoAdd=()=>{
+  ensureTodos();
+  data.todos.push({char:'',text:''});
+  save();renderTotalView();
+  // 새로 추가된 input에 포커스
+  setTimeout(()=>{
+    const inputs=document.querySelectorAll('.todo-text');
+    if(inputs.length)inputs[inputs.length-1].focus();
+  },50);
+};
+window._todoDel=(i)=>{
+  ensureTodos();data.todos.splice(i,1);save();renderTotalView();
+};
+window._todoText=(i,v)=>{
+  ensureTodos();data.todos[i].text=v;save();
+};
+window._todoChar=(i,v)=>{
+  ensureTodos();data.todos[i].char=v;save();renderTotalView();
+};
+window._todoMove=(i,dir)=>{
+  ensureTodos();
+  const j=i+dir;
+  if(j<0||j>=data.todos.length)return;
+  [data.todos[i],data.todos[j]]=[data.todos[j],data.todos[i]];
+  save();renderTotalView();
+};
+
 function renderTotalView(){
   const main=document.getElementById('main-content');
   let html='';
@@ -572,6 +649,7 @@ function renderTotalView(){
     html+=`</div>`;
   });
   html+=renderLinkSection();
+  html+=renderTodoSection();
   main.innerHTML=html;
   // 메모 입력 이벤트
   main.querySelectorAll('.total-memo').forEach(el=>{
