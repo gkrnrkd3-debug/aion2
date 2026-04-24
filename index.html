@@ -346,7 +346,7 @@ function autoReset(){
   lastDay.setHours(5,0,0,0);
   const lastDayTs=lastDay.getTime();
   const savedDayTs=parseInt(lsGet('aion2-day-ts')||'0');
-  if(savedDayTs < lastDayTs){
+  if(savedDayTs < lastDayTs || (data.savedAt||0) < lastDayTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr5'].forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-day-ts', String(lastDayTs));
   }
@@ -357,7 +357,7 @@ function autoReset(){
   const la=lastAbyss(now)||new Date(0);
   const laTs=la.getTime();
   const savedAkTs=parseInt(lsGet('aion2-abyss-ts')||'0');
-  if(savedAkTs < laTs){
+  if(savedAkTs < laTs || (data.savedAt||0) < laTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
     lsSet('aion2-abyss-ts', String(laTs));
   }
@@ -366,16 +366,16 @@ function autoReset(){
   function getLastWedAt5(n){
     const d=new Date(n);
     let daysBack=(d.getDay()-3+7)%7;
-    // 오늘이 수요일(daysBack==0)이고 아직 5시 이전이면 지난주로
     if(daysBack===0&&d.getHours()<5)daysBack=7;
-    // 오늘이 수요일(daysBack==0)이고 5시 이후면 오늘 5시가 기준
     d.setDate(d.getDate()-daysBack);
     d.setHours(5,0,0,0);
     return d.getTime();
   }
   const lastWedTs=getLastWedAt5(now);
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
-  if(savedWkTs < lastWedTs){
+  // data.savedAt이 리셋 기준 시각보다 이전이면 → 데이터가 오래된 것 → 무조건 리셋
+  const dataPredatesReset=(data.savedAt||0) < lastWedTs;
+  if(savedWkTs < lastWedTs || dataPredatesReset){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-week-ts', String(lastWedTs));
   }
