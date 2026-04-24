@@ -277,7 +277,7 @@ async function fbSet(d){
 // 3. 주간 항목을 daily에 통합 (weekly:true 플래그)
 const TASKS=[
   {id:'dr1',name:'성역',desc:'주간 퀘스트 — 수요일 05:00 초기화',count:'주간',weekly:true},
-  {id:'dr2',name:'어비스 회랑',desc:'화·목·토 21:00 초기화',count:'최대 3회'},
+  {id:'dr2',name:'어비스 회랑',desc:'수·토 22:00 초기화',count:'최대 3회'},
   {id:'dr4',name:'오드에너지',desc:'00시 기준 3시간마다 +15 자동충전',count:'최대 840',type:'energy'},
   {id:'dr5',name:'악몽 던전',desc:'몽환의 파편 획득 — 매일 2회 충전, 최대 14회',count:'2회/일'},
   {id:'wd1',name:'각성전',desc:'주간 3회 · 수요일 05:00 초기화',count:'3회/주',weekly:true},
@@ -339,6 +339,7 @@ function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
 function autoReset(){
   const now=new Date();
+  let didReset=false;
 
   // 악몽던전: 매일 05:00
   const lastDay=new Date(now);
@@ -349,10 +350,17 @@ function autoReset(){
   if(savedDayTs < lastDayTs || (data.savedAt||0) < lastDayTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr5'].forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-day-ts', String(lastDayTs));
+    didReset=true;
   }
 
-  // 어비스 회랑: 화목토 21:00
-  function lastAbyss(n){for(let b=0;b<=7;b++){const d=new Date(n);d.setDate(d.getDate()-b);d.setHours(21,0,0,0);if([2,4,6].includes(d.getDay())&&d<=n)return d;}
+  // 어비스 회랑: 수요일·토요일 22:00
+  function lastAbyss(n){
+    for(let b=0;b<=7;b++){
+      const d=new Date(n);
+      d.setDate(d.getDate()-b);
+      d.setHours(22,0,0,0);
+      if([3,6].includes(d.getDay())&&d<=n)return d;
+    }
   }
   const la=lastAbyss(now)||new Date(0);
   const laTs=la.getTime();
@@ -360,6 +368,7 @@ function autoReset(){
   if(savedAkTs < laTs || (data.savedAt||0) < laTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
     lsSet('aion2-abyss-ts', String(laTs));
+    didReset=true;
   }
 
   // 주간(성역·각성전·오드구매): 수요일 05:00
@@ -373,12 +382,14 @@ function autoReset(){
   }
   const lastWedTs=getLastWedAt5(now);
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
-  // data.savedAt이 리셋 기준 시각보다 이전이면 → 데이터가 오래된 것 → 무조건 리셋
   const dataPredatesReset=(data.savedAt||0) < lastWedTs;
   if(savedWkTs < lastWedTs || dataPredatesReset){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-week-ts', String(lastWedTs));
+    didReset=true;
   }
+
+  return didReset;
 }
 
 function getLastChargeSlot(){
@@ -1194,16 +1205,21 @@ document.getElementById('loading').style.display='none';
 // Firebase 데이터 적용 공통 함수
 function applyRemoteData(r){
   if(!r)return;
-  data=r;ensureDefaults(data);autoReset();
-  // data=r 으로 Firebase 에너지가 이미 data에 들어있음
-  // lastChargeSlot을 Firebase.savedAt 기준 슬롯으로 강제 설정
-  // → applyEnergy가 Firebase 저장 이후~지금까지 슬롯만 충전
+  data=r;ensureDefaults(data);
+  const didReset=autoReset();
   if(r.savedAt){
     lsSet('aion2-last-charge-slot',String(getLastChargeSlotAt(new Date(r.savedAt))));
   }
   applyEnergy(data);
   memos=data.memos;
-  lsSet('aion2-local',JSON.stringify(data));
+  // ★ 리셋이 발생했으면 초기화된 상태를 Firebase에도 즉시 저장
+  if(didReset){
+    data.savedAt=Date.now();
+    lsSet('aion2-local',JSON.stringify(data));
+    fbSet(data).catch(()=>{});
+  } else {
+    lsSet('aion2-local',JSON.stringify(data));
+  }
   render();
   if(isMemoMode)renderMemoTabs();
 }
