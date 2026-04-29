@@ -120,10 +120,10 @@
   .acc-memo-input::placeholder{color:rgba(255,255,255,0.15);}
   .total-acc-title .acc-total-prog{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;}
   .icon-char-row{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:7px;margin-bottom:3px;}
-  .total-memo{background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-family:inherit;font-size:10px;width:100%;min-width:0;padding:1px 3px;outline:none;}
+  .total-memo{background:none;border:none;border-bottom:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-family:inherit;font-size:10px;width:52px;flex-shrink:0;padding:1px 3px;outline:none;}
   .total-memo:focus{border-bottom-color:var(--gold);color:var(--text);}
   .total-memo::placeholder{color:rgba(255,255,255,0.2);}
-  .icon-char-name{font-size:11px;color:var(--blue);font-weight:600;width:60px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .icon-char-name{font-size:11px;color:var(--blue);font-weight:600;width:46px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .icon-tasks{display:flex;gap:3px;align-items:center;flex:1;}
   .icon-sep{width:1px;height:14px;background:rgba(255,255,255,0.08);margin:0 1px;flex-shrink:0;}
   /* 4. 완료시 붉은색 강조 */
@@ -148,6 +148,8 @@
   .add-link-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
+  .acc-wd4-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:14px;padding:2px 6px;cursor:pointer;line-height:1;transition:all 0.15s;flex-shrink:0;}
+  .acc-wd4-btn.done{background:rgba(224,85,85,0.2);border-color:rgba(224,85,85,0.5);}
   .todo-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
   .todo-section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
   .todo-row{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:7px;margin-bottom:4px;}
@@ -282,6 +284,8 @@ const TASKS=[
   {id:'dr5',name:'악몽 던전',desc:'몽환의 파편 획득 — 매일 2회 충전, 최대 14회',count:'2회/일'},
   {id:'wd1',name:'각성전',desc:'주간 3회 · 수요일 05:00 초기화',count:'3회/주',weekly:true},
   {id:'wd4',name:'오드에너지 구매',desc:'주간 · 수요일 05:00 초기화',count:'주간',weekly:true},
+  {id:'conquest',name:'정복',desc:'남은 클리어 횟수 · 수요일 05:00 초기화',count:'35회/주',weekly:true,type:'counter',max:35,icon:'🗡'},
+  {id:'transcend',name:'초월',desc:'남은 클리어 횟수 · 수요일 05:00 초기화',count:'28회/주',weekly:true,type:'counter',max:28,icon:'✨'},
 ];
 const DAILY_IDS=TASKS.filter(t=>!t.type&&!t.weekly).map(t=>t.id);
 const WEEKLY_IDS=TASKS.filter(t=>t.weekly).map(t=>t.id);
@@ -384,7 +388,15 @@ function autoReset(){
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
   const dataPredatesReset=(data.savedAt||0) < lastWedTs;
   if(savedWkTs < lastWedTs || dataPredatesReset){
-    data.accounts.forEach(acc=>acc.chars.forEach(ch=>WEEKLY_IDS.forEach(id=>{ch.state[id]=false;})));
+    data.accounts.forEach(acc=>{
+      acc.wd4=false;
+      acc.chars.forEach(ch=>{
+        WEEKLY_IDS.filter(id=>id!=='wd4').forEach(id=>{ch.state[id]=false;});
+        if(!ch.state)ch.state={};
+        ch.state['conquest']=35;
+        ch.state['transcend']=28;
+      });
+    });
     lsSet('aion2-week-ts', String(lastWedTs));
     didReset=true;
   }
@@ -453,6 +465,7 @@ function ensureDefaults(d){
   if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''}];
   if(!d.links)d.links=[];
   if(!d.todos)d.todos=[];
+  if(!d.weekly)d.weekly={conquest:35,transcend:28};
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
@@ -471,17 +484,14 @@ function cpLabel(cp){
 
 function renderAccTabs(){
   const el=document.getElementById('acc-tabs');el.innerHTML='';
-  const ad=data.accounts.reduce((s,a)=>s+a.chars.reduce((s2,c)=>s2+getProgress(c),0),0);
-  const am=data.accounts.reduce((s,a)=>s+a.chars.length*TOTAL,0);
   const tb=document.createElement('button');
   tb.className='acc-tab total-tab'+(curAcc===-1?' active':'');
-  tb.innerHTML=`<span>📋</span><span class="acc-prog">${ad}/${am}</span>`;
+  tb.innerHTML=`<span>📋</span>`;
   tb.onclick=()=>{curAcc=-1;render();};el.appendChild(tb);
   data.accounts.forEach((acc,i)=>{
-    const d=acc.chars.reduce((s,c)=>s+getProgress(c),0),m=acc.chars.length*TOTAL;
     const btn=document.createElement('button');
     btn.className='acc-tab'+(i===curAcc?' active':'');
-    btn.innerHTML=`<span>${acc.name}</span><span class="acc-prog">${d}/${m}</span>`;
+    btn.innerHTML=`<span>${acc.name}</span>`;
     if(data.accounts.length>1){
       const del=document.createElement('span');
       del.className='del-acc';del.textContent='×';del.title='계정 삭제';
@@ -629,33 +639,101 @@ window._todoMove=(i,dir)=>{
   save();renderTotalView();
 };
 
+// 정복/초월 per-캐릭터 카운터
+window._ctrDown=(ai,ci,key,max,wrapEl)=>{
+  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
+  if(ch.state[key]===undefined)ch.state[key]=max;
+  const inp=wrapEl.querySelector('input');
+  const v=Math.max(0,(parseInt(inp?inp.value:ch.state[key])||0)-1);
+  if(inp)inp.value=v;
+  ch.state[key]=v;save();
+};
+window._editCtr=(ai,ci,key,max,el)=>{
+  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
+  if(ch.state[key]===undefined)ch.state[key]=max;
+  const cur=ch.state[key];
+  const wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:1px;width:26px;flex-shrink:0;';
+  const input=document.createElement('input');
+  input.type='number';input.min=0;input.max=max;input.value=cur;
+  input.style.cssText='width:26px;font-size:9px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.4);border-radius:4px;outline:none;color:var(--bright);text-align:center;font-family:inherit;padding:2px 0;';
+  const down=document.createElement('button');
+  down.textContent='▼';
+  down.style.cssText='background:none;border:1px solid rgba(255,255,255,0.12);border-radius:4px;color:var(--muted);font-size:8px;padding:1px 5px;cursor:pointer;width:26px;';
+
+  function restoreCell(v){
+    const newEl=document.createElement('div');
+    newEl.className='icon-energy';
+    newEl.style.cssText='width:26px;cursor:pointer;';
+    newEl.dataset.ai=ai;newEl.dataset.ci=ci;newEl.dataset.key=key;
+    newEl.textContent=v;
+    newEl.onclick=()=>window._editCtr(ai,ci,key,max,newEl);
+    wrap.replaceWith(newEl);
+  }
+  let confirmed=false;
+  function commit(){
+    if(confirmed)return;confirmed=true;
+    const v=Math.max(0,Math.min(max,parseInt(input.value)||0));
+    ch.state[key]=v;save();restoreCell(v);
+  }
+  down.addEventListener('mousedown',e=>e.preventDefault());
+  down.addEventListener('click',e=>{
+    e.stopPropagation();
+    const v=Math.max(0,(parseInt(input.value)||0)-1);
+    input.value=v;ch.state[key]=v;save();
+  });
+  input.addEventListener('blur',commit);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=cur;input.blur();}});
+  input.addEventListener('click',e=>e.stopPropagation());
+  wrap.appendChild(input);wrap.appendChild(down);
+  el.replaceWith(wrap);
+  input.focus();input.select();
+};
+window._toggleAccWd4=(ai)=>{
+  data.accounts[ai].wd4=!data.accounts[ai].wd4;
+  save();renderTotalView();
+};
+window._moveChar=(ci,dir)=>{
+  const acc=data.accounts[curAcc];
+  const j=ci+dir;
+  if(j<0||j>=acc.chars.length)return;
+  [acc.chars[ci],acc.chars[j]]=[acc.chars[j],acc.chars[ci]];
+  save();render();
+};
+
 function renderTotalView(){
   const main=document.getElementById('main-content');
   let html='';
   data.accounts.forEach((acc,ai)=>{
     const ad=acc.chars.reduce((s,c)=>s+getProgress(c),0),am=acc.chars.length*TOTAL;
+    const wd4Done=!!(acc.wd4);
     const allEnergyBtns=ai===0?`
       <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
         <button onclick="window._allEnergy(-15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">−15</button>
         <button onclick="window._allEnergy(15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">+15</button>
       </div>`:'';
-    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><span class="acc-total-prog" style="margin-left:auto;margin-right:${ai===0?'4px':'0'}">${ad}/${am}</span>${allEnergyBtns}</div>`;
+    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><button class="acc-wd4-btn${wd4Done?' done':''}" onclick="window._toggleAccWd4(${ai})" title="오드에너지 구매">🛒</button>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'😈',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd4:'🛒'};
       const taskHtml=TASKS.map(t=>{
+        if(t.type==='counter')return ''; // 별도 셀로 표시
+        if(t.id==='wd4')return ''; // 계정 단위로 이동
         if(t.type==='energy'){const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';return `<div class="icon-energy ${ecls}" data-ai="${ai}" data-ci="${ci}" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;}
         const done=!!(ch.state&&ch.state[t.id]);
         return `<div class="icon-task${done?' done':''}" title="${t.name}" onclick="window._tt(${ai},${ci},'${t.id}')">${icons[t.id]||'•'}</div>`;
       }).join('');
+      const cq=(ch.state&&ch.state['conquest']!==undefined)?ch.state['conquest']:35;
+      const tr=(ch.state&&ch.state['transcend']!==undefined)?ch.state['transcend']:28;
+      const cqCls=cq<=0?'ctr-zero':cq<=10?'ctr-low':'';
+      const trCls=tr<=0?'ctr-zero':tr<=8?'ctr-low':'';
       const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
       const cpTag=ch.cp?`<span style="font-size:9px;font-weight:700;color:${cpColor(ch.cp)};margin-right:3px;">${ch.cp}</span>`:'';
-      // 이 캐릭터가 속한 링크 찾기 (첫번째 링크 기준으로 색상)
       const LINK_COLORS=['rgba(224,85,85,0.13)','rgba(74,158,221,0.13)','rgba(78,207,122,0.13)','rgba(160,106,240,0.13)','rgba(224,120,85,0.13)','rgba(85,200,224,0.13)','rgba(201,168,76,0.13)'];
       const LINK_BORDER=['rgba(224,85,85,0.35)','rgba(74,158,221,0.35)','rgba(78,207,122,0.35)','rgba(160,106,240,0.35)','rgba(224,120,85,0.35)','rgba(85,200,224,0.35)','rgba(201,168,76,0.35)'];
       const linkIdx=(data.links||[]).findIndex(lk=>lk.chars&&lk.chars[ai]===ci);
       const rowBg=linkIdx>=0?`background:${LINK_COLORS[linkIdx%LINK_COLORS.length]};border-color:${LINK_BORDER[linkIdx%LINK_BORDER.length]};`:'';
-      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:70px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'48px':'60px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
+      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'34px':'44px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><div class="icon-energy" style="width:26px;cursor:pointer;" data-ai="${ai}" data-ci="${ci}" data-key="conquest" onclick="window._editCtr(${ai},${ci},'conquest',35,this)">${cq}</div><div class="icon-energy" style="width:26px;cursor:pointer;" data-ai="${ai}" data-ci="${ci}" data-key="transcend" onclick="window._editCtr(${ai},${ci},'transcend',28,this)">${tr}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
     });
     html+=`</div>`;
   });
@@ -688,6 +766,7 @@ function renderCharView(){
   let html=`
     <div class="top-row" style="padding-bottom:8px;">
       <input class="name-input" id="ani" type="text" maxlength="10" value="${acc.name}" placeholder="계정명"/>
+      <button class="acc-wd4-btn${acc.wd4?' done':''}" onclick="window._toggleAccWd4(${curAcc});this.classList.toggle('done')" style="margin-left:8px;" title="오드에너지 구매 완료">🛒 오드에너지 구매</button>
       <button class="add-char-btn" style="margin-left:auto;" onclick="addChar()">+ 캐릭터 추가</button>
     </div>`;
   // 각 캐릭터 섹션
@@ -704,6 +783,8 @@ function renderCharView(){
           color:${ch.cp?cpColor(ch.cp):'var(--muted)'};font-family:inherit;font-size:12px;font-weight:700;
           width:52px;padding:1px 2px;text-align:left;">
         <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;">
+          <button class="todo-ord-btn" style="font-size:11px;padding:2px 5px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;" onclick="window._moveChar(${i},-1)" ${i===0?'disabled':''}>▲</button>
+          <button class="todo-ord-btn" style="font-size:11px;padding:2px 5px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;" onclick="window._moveChar(${i},1)" ${i===acc.chars.length-1?'disabled':''}>▼</button>
           ${delBtn}
           <button class="sm-btn" onclick="window._raIdx(${i})">초기화</button>
         </div>
@@ -759,6 +840,7 @@ function renderTaskListForChar(ci){
   el.innerHTML='';
   let sepDone=false;
   TASKS.forEach(task=>{
+    if(task.id==='wd4')return; // 계정 단위로 이동
     if(task.weekly&&!sepDone){
       sepDone=true;
     }
@@ -781,6 +863,23 @@ function renderTaskListForChar(ci){
           <button class="energy-btn full" onclick="window._seIdx(${ci},840)">MAX</button>
           <button class="energy-btn reset-e" onclick="window._seIdx(${ci},0)">초기화</button>
           <button class="energy-btn" onclick="window._undoEnergy(${ci})" style="color:rgba(255,255,255,0.5);border-color:rgba(255,255,255,0.15);">↩</button>
+        </div></div>`;
+    } else if(task.type==='counter'){
+      const max=task.max||35;
+      const v=(ch.state&&ch.state[task.id]!==undefined)?ch.state[task.id]:max;
+      div.className='task-item energy-item';
+      div.innerHTML=`<div class="energy-bar-wrap">
+        <div class="energy-label-row">
+          <div><div class="energy-name">${task.icon||'🗡'} ${task.name}</div><div class="energy-desc">${task.desc}</div></div>
+          <input class="energy-direct" type="number" min="0" max="${max}" value="${v}" placeholder="0~${max}"
+            onchange="(()=>{const ch=data.accounts[curAcc].chars[${ci}];if(!ch.state)ch.state={};ch.state['${task.id}']=Math.max(0,Math.min(${max},parseInt(this.value)||0));save();})()"
+            onclick="this.select()">
+          <div class="energy-val" style="cursor:default;">/ ${max}</div>
+        </div>
+        <div class="energy-btns" style="margin-top:4px;">
+          <button class="energy-btn minus" onclick="(()=>{const ch=data.accounts[curAcc].chars[${ci}];if(!ch.state)ch.state={};const v=Math.max(0,(ch.state['${task.id}']!==undefined?ch.state['${task.id}']:${max})-1);ch.state['${task.id}']=v;save();renderTaskListForChar(${ci});})()">−1</button>
+          <button class="energy-btn plus" onclick="(()=>{const ch=data.accounts[curAcc].chars[${ci}];if(!ch.state)ch.state={};const v=Math.min(${max},(ch.state['${task.id}']!==undefined?ch.state['${task.id}']:${max})+1);ch.state['${task.id}']=v;save();renderTaskListForChar(${ci});})()">+1</button>
+          <button class="energy-btn full" onclick="(()=>{const ch=data.accounts[curAcc].chars[${ci}];if(!ch.state)ch.state={};ch.state['${task.id}']=${max};save();renderTaskListForChar(${ci});})()">초기화</button>
         </div></div>`;
     } else {
       const done=!!(ch.state&&ch.state[task.id]);
