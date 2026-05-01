@@ -148,8 +148,8 @@
   .add-link-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
-  .acc-wd4-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:14px;padding:2px 6px;cursor:pointer;line-height:1;transition:all 0.15s;flex-shrink:0;}
-  .acc-wd4-btn.done{background:rgba(224,85,85,0.2);border-color:rgba(224,85,85,0.5);}
+  .icon-ctr{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:26px;width:26px;height:38px;background:var(--card2);border:1px solid rgba(255,255,255,0.07);border-radius:5px;font-size:9px;font-weight:700;color:var(--text);cursor:pointer;flex-shrink:0;user-select:none;}
+  .icon-ctr:hover{background:rgba(255,255,255,0.08);}
   .todo-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
   .todo-section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
   .todo-row{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:7px;margin-bottom:4px;}
@@ -653,7 +653,7 @@ window._editCtr=(ai,ci,key,max,el)=>{
   if(ch.state[key]===undefined)ch.state[key]=max;
   const cur=ch.state[key];
   const wrap=document.createElement('div');
-  wrap.style.cssText='display:flex;flex-direction:column;align-items:center;gap:1px;width:26px;flex-shrink:0;';
+  wrap.style.cssText=`display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:26px;height:38px;flex-shrink:0;${key==='conquest'?'margin-left:6px;':''}background:var(--card2);border:1px solid rgba(201,168,76,0.4);border-radius:5px;`;
   const input=document.createElement('input');
   input.type='number';input.min=0;input.max=max;input.value=cur;
   input.style.cssText='width:26px;font-size:9px;font-weight:700;background:rgba(255,255,255,0.08);border:1px solid rgba(201,168,76,0.4);border-radius:4px;outline:none;color:var(--bright);text-align:center;font-family:inherit;padding:2px 0;';
@@ -663,8 +663,8 @@ window._editCtr=(ai,ci,key,max,el)=>{
 
   function restoreCell(v){
     const newEl=document.createElement('div');
-    newEl.className='icon-energy';
-    newEl.style.cssText='width:26px;cursor:pointer;';
+    newEl.className='icon-ctr';
+    if(key==='conquest')newEl.style.marginLeft='6px';
     newEl.dataset.ai=ai;newEl.dataset.ci=ci;newEl.dataset.key=key;
     newEl.textContent=v;
     newEl.onclick=()=>window._editCtr(ai,ci,key,max,newEl);
@@ -733,7 +733,7 @@ function renderTotalView(){
       const LINK_BORDER=['rgba(224,85,85,0.35)','rgba(74,158,221,0.35)','rgba(78,207,122,0.35)','rgba(160,106,240,0.35)','rgba(224,120,85,0.35)','rgba(85,200,224,0.35)','rgba(201,168,76,0.35)'];
       const linkIdx=(data.links||[]).findIndex(lk=>lk.chars&&lk.chars[ai]===ci);
       const rowBg=linkIdx>=0?`background:${LINK_COLORS[linkIdx%LINK_COLORS.length]};border-color:${LINK_BORDER[linkIdx%LINK_BORDER.length]};`:'';
-      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'34px':'44px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><div class="icon-energy" style="width:26px;cursor:pointer;margin-left:6px;" data-ai="${ai}" data-ci="${ci}" data-key="conquest" onclick="window._editCtr(${ai},${ci},'conquest',35,this)">${cq}</div><div class="icon-energy" style="width:26px;cursor:pointer;" data-ai="${ai}" data-ci="${ci}" data-key="transcend" onclick="window._editCtr(${ai},${ci},'transcend',28,this)">${tr}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
+      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'34px':'44px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><div class="icon-ctr" style="margin-left:6px;" data-ai="${ai}" data-ci="${ci}" data-key="conquest" onclick="window._editCtr(${ai},${ci},'conquest',35,this)">${cq}</div><div class="icon-ctr" data-ai="${ai}" data-ci="${ci}" data-key="transcend" onclick="window._editCtr(${ai},${ci},'transcend',28,this)">${tr}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
     });
     html+=`</div>`;
   });
