@@ -150,6 +150,9 @@
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
   .icon-ctr{font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
   .icon-ctr:hover{background:rgba(255,255,255,0.08);}
+  .icon-ctr-blank{width:24px;height:24px;flex-shrink:0;}
+  .acc-wd4-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:14px;padding:2px 7px;cursor:pointer;line-height:1;transition:all 0.2s;flex-shrink:0;opacity:0.28;filter:grayscale(1);}
+  .acc-wd4-btn.done{opacity:1;filter:none;background:rgba(78,207,122,0.15);border-color:rgba(78,207,122,0.55);box-shadow:0 0 7px rgba(78,207,122,0.22);}
   .todo-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
   .todo-section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
   .todo-row{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:7px;margin-bottom:4px;}
@@ -471,7 +474,7 @@ function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
 function cpColor(cp){
   if(!cp||cp<22)return '#6a7a90';   // 회색
-  if(cp<25)return '#aab8c2';         // 실버
+  if(cp<24)return '#aab8c2';         // 실버
   if(cp<28)return '#4a9edd';         // 블루
   if(cp<30)return '#d4b86a';         // 골드(연)
   if(cp<35)return '#a06af0';         // 퍼플
@@ -694,6 +697,11 @@ window._toggleAccWd4=(ai)=>{
   data.accounts[ai].wd4=!data.accounts[ai].wd4;
   save();renderTotalView();
 };
+window._toggleShowCtr=(ci)=>{
+  const ch=data.accounts[curAcc].chars[ci];
+  ch.showCtr=(ch.showCtr===false)?true:false;
+  save();renderCharView();
+};
 window._moveChar=(ci,dir)=>{
   const acc=data.accounts[curAcc];
   const j=ci+dir;
@@ -734,7 +742,11 @@ function renderTotalView(){
       const LINK_BORDER=['rgba(224,85,85,0.35)','rgba(74,158,221,0.35)','rgba(78,207,122,0.35)','rgba(160,106,240,0.35)','rgba(224,120,85,0.35)','rgba(85,200,224,0.35)','rgba(201,168,76,0.35)'];
       const linkIdx=(data.links||[]).findIndex(lk=>lk.chars&&lk.chars[ai]===ci);
       const rowBg=linkIdx>=0?`background:${LINK_COLORS[linkIdx%LINK_COLORS.length]};border-color:${LINK_BORDER[linkIdx%LINK_BORDER.length]};`:'';
-      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'34px':'44px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div><div class="icon-ctr" style="margin-left:4px;" data-ai="${ai}" data-ci="${ci}" data-key="conquest" onclick="window._editCtr(${ai},${ci},'conquest',35,this)">${cq}</div><div class="icon-ctr" style="margin-left:2px;" data-ai="${ai}" data-ci="${ci}" data-key="transcend" onclick="window._editCtr(${ai},${ci},'transcend',28,this)">${tr}</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
+      const showCtr=ch.showCtr!==false;
+      const ctrHtml=showCtr
+        ?`<div class="icon-ctr" style="margin-left:4px;" data-ai="${ai}" data-ci="${ci}" data-key="conquest" onclick="window._editCtr(${ai},${ci},'conquest',35,this)">${cq}</div><div class="icon-ctr" style="margin-left:2px;" data-ai="${ai}" data-ci="${ci}" data-key="transcend" onclick="window._editCtr(${ai},${ci},'transcend',28,this)">${tr}</div>`
+        :`<div style="width:24px;flex-shrink:0;margin-left:4px;"></div><div style="width:24px;flex-shrink:0;margin-left:2px;"></div>`;
+      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'34px':'44px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div>${ctrHtml}<input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
     });
     html+=`</div>`;
   });
@@ -782,7 +794,7 @@ function renderCharView(){
           style="background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.2);outline:none;
           color:${ch.cp?cpColor(ch.cp):'var(--muted)'};font-family:inherit;font-size:12px;font-weight:700;
           width:52px;padding:1px 2px;text-align:left;">
-        <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;">
+        <div style="margin-left:auto;display:flex;gap:6px;flex-shrink:0;align-items:center;">
           <button class="todo-ord-btn" style="font-size:11px;padding:2px 5px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;" onclick="window._moveChar(${i},-1)" ${i===0?'disabled':''}>▲</button>
           <button class="todo-ord-btn" style="font-size:11px;padding:2px 5px;border:1px solid rgba(255,255,255,0.1);border-radius:4px;" onclick="window._moveChar(${i},1)" ${i===acc.chars.length-1?'disabled':''}>▼</button>
           ${delBtn}
@@ -870,7 +882,7 @@ function renderTaskListForChar(ci){
       div.className='task-item energy-item';
       div.innerHTML=`<div class="energy-bar-wrap">
         <div class="energy-label-row">
-          <div><div class="energy-name">${task.icon||'🗡'} ${task.name}</div><div class="energy-desc">${task.desc}</div></div>
+          <div><div class="energy-name">${task.icon||'🗡'} ${task.name}${task.id==='conquest'?`<label style="margin-left:8px;font-size:10px;color:var(--muted);font-weight:400;cursor:pointer;display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" ${(()=>{const ch=data.accounts[curAcc].chars[ci];return ch.showCtr!==false?'checked':'';})()}  onchange="window._toggleShowCtr(${ci})" style="width:12px;height:12px;cursor:pointer;accent-color:var(--gold);"> 토탈표시</label>`:''}</div><div class="energy-desc">${task.desc}</div></div>
           <input class="energy-direct" type="number" min="0" max="${max}" value="${v}" placeholder="0~${max}"
             onchange="(()=>{const ch=data.accounts[curAcc].chars[${ci}];if(!ch.state)ch.state={};ch.state['${task.id}']=Math.max(0,Math.min(${max},parseInt(this.value)||0));save();})()"
             onclick="this.select()">
