@@ -154,10 +154,14 @@
   .acc-wd4-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:14px;padding:2px 7px;cursor:pointer;line-height:1;transition:all 0.2s;flex-shrink:0;opacity:0.28;filter:grayscale(1);}
   .acc-wd4-btn.done{opacity:1;filter:none;background:rgba(78,207,122,0.15);border-color:rgba(78,207,122,0.55);box-shadow:0 0 7px rgba(78,207,122,0.22);}
   .todo-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
+  .todo-char-btns{display:flex;gap:3px;flex-wrap:wrap;flex-shrink:0;max-width:130px;}
+  .todo-char-btn{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--muted);font-family:inherit;font-size:10px;padding:2px 5px;cursor:pointer;line-height:1.3;white-space:nowrap;}
+  .todo-char-btn.sel{background:rgba(255,255,255,0.15);border-color:rgba(255,255,255,0.4);color:var(--bright);font-weight:700;}
   .todo-section-title{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--gold);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
   .todo-row{display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--card);border:1px solid rgba(255,255,255,0.055);border-radius:7px;margin-bottom:4px;}
   .todo-num{font-size:11px;font-weight:700;color:var(--gold);width:14px;text-align:center;flex-shrink:0;}
-  .todo-char-sel{background:var(--card2);border:1px solid rgba(255,255,255,0.08);border-radius:5px;color:var(--blue);font-family:inherit;font-size:11px;padding:3px 4px;outline:none;flex-shrink:0;max-width:80px;}
+  .todo-char-sel{background:var(--card2);border:1px solid rgba(255,255,255,0.08);border-radius:5px;color:var(--blue);font-family:inherit;font-size:11px;padding:3px 4px;outline:none;max-width:70px;min-width:0;}
+  .todo-char-sel.empty{width:22px;min-width:22px;max-width:22px;padding:3px 2px;opacity:0.5;}
   .todo-text{flex:1;background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:12px;min-width:0;}
   .todo-text::placeholder{color:rgba(255,255,255,0.2);}
   .todo-order-btns{display:flex;flex-direction:column;gap:1px;flex-shrink:0;}
@@ -468,6 +472,8 @@ function ensureDefaults(d){
   if(!d.memos||!d.memos.length)d.memos=[{title:'각성전',content:''}];
   if(!d.links)d.links=[];
   if(!d.todos)d.todos=[];
+  // 구버전 단일 char → chars 배열 마이그레이션
+  d.todos.forEach(t=>{if(!t.chars){t.chars=t.char?[t.char]:[];delete t.char;}});
   if(!d.weekly)d.weekly={conquest:35,transcend:28};
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
@@ -532,70 +538,28 @@ function renderCharTabs(){
   add.className='add-char-btn';add.textContent='+ 캐릭터 추가';add.onclick=addChar;el.appendChild(add);
 }
 
-function renderLinkSection(){
-  if(!data.links)data.links=[];
-  let html=`<div class="link-section">
-    <div class="link-section-title">
-      <span>🔗 링크 시스템</span>
-      <span style="font-size:10px;color:var(--muted);font-weight:400;letter-spacing:0;">파티 조합 메모</span>
-    </div>`;
-  if(data.links.length===0){
-    html+=`<div style="font-size:11px;color:var(--muted);padding:8px 4px 10px;font-style:italic;">링크가 없습니다. 아래 버튼으로 추가하세요.</div>`;
-  }
-  data.links.forEach((link,li)=>{
-    // 계정별 select
-    const selects=data.accounts.map((acc,ai)=>{
-      const cur=link.chars&&link.chars[ai]!==undefined?link.chars[ai]:undefined;
-      const opts=`<option value="">— ${acc.name}</option>`+acc.chars.map((ch,ci)=>`<option value="${ci}"${cur===ci?'selected':''}>${ch.name}${ch.cp?' '+ch.cp:''}</option>`).join('');
-      return `<select class="link-select" onchange="window._linkSet(${li},${ai},this.value)">${opts}</select>`;
-    }).join('');
-    html+=`<div class="link-card">
-      <input class="link-name-input" type="text" maxlength="8" value="${(link.name||'링크'+(li+1)).replace(/"/g,'&quot;')}" placeholder="링크명" oninput="window._linkRename(${li},this.value)">
-      <div class="link-selects">${selects}</div>
-      <button class="link-del-btn" onclick="window._linkDel(${li})">×</button>
-    </div>`;
-  });
-  html+=`<button class="add-link-btn" onclick="window._linkAdd()">+ 링크 추가</button></div>`;
-  return html;
-}
+// ---- 우선순위 할일 (링크시스템 통합) ----
+const LINK_COLORS=['rgba(224,85,85,0.18)','rgba(160,106,240,0.18)','rgba(78,207,122,0.18)','rgba(224,120,85,0.18)','rgba(85,200,224,0.18)','rgba(201,168,76,0.18)','rgba(224,85,160,0.18)'];
+const LINK_BORDER=['rgba(224,85,85,0.45)','rgba(160,106,240,0.45)','rgba(78,207,122,0.45)','rgba(224,120,85,0.45)','rgba(85,200,224,0.45)','rgba(201,168,76,0.45)','rgba(224,85,160,0.45)'];
 
-window._linkAdd=()=>{
-  if(!data.links)data.links=[];
-  data.links.push({name:'링크'+(data.links.length+1),chars:{}});
-  save();if(curAcc===-1)renderTotalView();
-};
-window._linkDel=(li)=>{
-  data.links.splice(li,1);
-  save();if(curAcc===-1)renderTotalView();
-};
-window._linkSet=(li,ai,val)=>{
-  if(!data.links[li].chars)data.links[li].chars={};
-  if(val==='')delete data.links[li].chars[ai];
-  else data.links[li].chars[ai]=parseInt(val);
-  save();if(curAcc===-1)renderTotalView();
-};
-window._linkRename=(li,val)=>{
-  data.links[li].name=val||('링크'+(li+1));
-  save();
-};
-
-// ---- 우선순위 할일 리스트 ----
 function ensureTodos(){if(!data.todos)data.todos=[];}
 
 function renderTodoSection(){
   ensureTodos();
-  // 캐릭터 전체 목록 (계정명+캐릭터명)
-  const charOpts=`<option value="">— 캐릭터</option>`+data.accounts.map((acc,ai)=>
-    acc.chars.map((ch,ci)=>`<option value="${ai}-${ci}">${ch.name}</option>`).join('')
-  ).join('');
-
   let rows='';
   data.todos.forEach((todo,i)=>{
-    const selVal=todo.char||'';
+    const chars=todo.chars||[];
+    const selects=data.accounts.slice(0,3).map((acc,ai)=>{
+      const selKey=chars.find(k=>k.startsWith(ai+'-'))||'';
+      const selCi=selKey?parseInt(selKey.split('-')[1]):-1;
+      const hasVal=selCi>=0;
+      const opts=`<option value=""></option>`+acc.chars.map((ch,ci)=>`<option value="${ai}-${ci}"${selCi===ci?'selected':''}>${ch.name}</option>`).join('');
+      return `<select class="todo-char-sel${hasVal?'':' empty'}" onchange="window._todoSetChar(${i},${ai},this.value)">${opts}</select>`;
+    }).join('');
     rows+=`<div class="todo-row" data-i="${i}">
       <span class="todo-num">${i+1}</span>
-      <select class="todo-char-sel" data-i="${i}" onchange="window._todoChar(${i},this.value)">${charOpts.replace(`value="${selVal}"`,`value="${selVal}" selected`)}</select>
-      <input class="todo-text" type="text" maxlength="30" placeholder="할 일 입력..." value="${(todo.text||'').replace(/"/g,'&quot;')}" data-i="${i}"
+      <div style="display:flex;gap:2px;flex-shrink:0;">${selects}</div>
+      <input class="todo-text" type="text" maxlength="30" placeholder="할 일 입력..." value="${(todo.text||'').replace(/"/g,'&quot;')}"
         oninput="window._todoText(${i},this.value)"
         onkeydown="if(event.key==='Enter')this.blur()">
       <div class="todo-order-btns">
@@ -605,7 +569,6 @@ function renderTodoSection(){
       <button class="todo-del-btn" onclick="window._todoDel(${i})">×</button>
     </div>`;
   });
-
   return `<div class="todo-section">
     <div class="todo-section-title">
       <span>📋 우선순위 할 일</span>
@@ -615,28 +578,23 @@ function renderTodoSection(){
   </div>`;
 }
 
+window._todoSetChar=(i,ai,val)=>{
+  ensureTodos();
+  if(!data.todos[i].chars)data.todos[i].chars=[];
+  data.todos[i].chars=data.todos[i].chars.filter(k=>!k.startsWith(ai+'-'));
+  if(val)data.todos[i].chars.push(val);
+  save();renderTotalView();
+};
 window._todoAdd=()=>{
   ensureTodos();
-  data.todos.push({char:'',text:''});
+  data.todos.push({chars:[],text:''});
   save();renderTotalView();
-  // 새로 추가된 input에 포커스
-  setTimeout(()=>{
-    const inputs=document.querySelectorAll('.todo-text');
-    if(inputs.length)inputs[inputs.length-1].focus();
-  },50);
+  setTimeout(()=>{const inputs=document.querySelectorAll('.todo-text');if(inputs.length)inputs[inputs.length-1].focus();},50);
 };
-window._todoDel=(i)=>{
-  ensureTodos();data.todos.splice(i,1);save();renderTotalView();
-};
-window._todoText=(i,v)=>{
-  ensureTodos();data.todos[i].text=v;save();
-};
-window._todoChar=(i,v)=>{
-  ensureTodos();data.todos[i].char=v;save();renderTotalView();
-};
+window._todoDel=(i)=>{ensureTodos();data.todos.splice(i,1);save();renderTotalView();};
+window._todoText=(i,v)=>{ensureTodos();data.todos[i].text=v;save();};
 window._todoMove=(i,dir)=>{
-  ensureTodos();
-  const j=i+dir;
+  ensureTodos();const j=i+dir;
   if(j<0||j>=data.todos.length)return;
   [data.todos[i],data.todos[j]]=[data.todos[j],data.todos[i]];
   save();renderTotalView();
@@ -738,9 +696,7 @@ function renderTotalView(){
       const trCls=tr<=0?'ctr-zero':tr<=8?'ctr-low':'';
       const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
       const cpTag=ch.cp?`<span style="font-size:9px;font-weight:700;color:${cpColor(ch.cp)};margin-right:3px;">${ch.cp}</span>`:'';
-      const LINK_COLORS=['rgba(224,85,85,0.13)','rgba(74,158,221,0.13)','rgba(78,207,122,0.13)','rgba(160,106,240,0.13)','rgba(224,120,85,0.13)','rgba(85,200,224,0.13)','rgba(201,168,76,0.13)'];
-      const LINK_BORDER=['rgba(224,85,85,0.35)','rgba(74,158,221,0.35)','rgba(78,207,122,0.35)','rgba(160,106,240,0.35)','rgba(224,120,85,0.35)','rgba(85,200,224,0.35)','rgba(201,168,76,0.35)'];
-      const linkIdx=(data.links||[]).findIndex(lk=>lk.chars&&lk.chars[ai]===ci);
+      const linkIdx=(data.todos||[]).findIndex(td=>(td.chars||[]).includes(`${ai}-${ci}`));
       const rowBg=linkIdx>=0?`background:${LINK_COLORS[linkIdx%LINK_COLORS.length]};border-color:${LINK_BORDER[linkIdx%LINK_BORDER.length]};`:'';
       const showCtr=ch.showCtr!==false;
       const ctrHtml=showCtr
@@ -750,7 +706,6 @@ function renderTotalView(){
     });
     html+=`</div>`;
   });
-  html+=renderLinkSection();
   html+=renderTodoSection();
   main.innerHTML=html;
   // 메모 입력 이벤트
