@@ -129,8 +129,8 @@
   /* 4. 완료시 붉은색 강조 */
   .icon-task{width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;transition:all 0.15s;position:relative;flex-shrink:0;user-select:none;}
   .icon-task:hover{background:rgba(255,255,255,0.08);}
-  .icon-task.done{background:rgba(224,85,85,0.2);border-color:rgba(224,85,85,0.55);}
-  .icon-task.done::after{content:'✓';position:absolute;bottom:-2px;right:-1px;font-size:8px;color:var(--red);font-weight:900;line-height:1;}
+  .icon-task.done{background:rgba(200,40,40,0.35);border-color:rgba(200,40,40,0.8);}
+  .icon-task.done::after{content:'✔';position:absolute;bottom:-3px;right:-2px;font-size:10px;color:#ff2222;font-weight:900;line-height:1;text-shadow:0 0 3px rgba(255,0,0,0.5);}
   .icon-energy{font-size:9px;font-weight:700;color:var(--muted);width:30px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .icon-energy.e-mid{color:#4a9edd;border-color:rgba(74,158,221,0.4);background:rgba(74,158,221,0.08);}
   .icon-energy.e-high{color:#c9a84c;border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.1);}
@@ -148,8 +148,9 @@
   .add-link-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
-  .icon-ctr{font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
+  .char-tip{position:fixed;z-index:9999;background:#1a2535;border:1px solid rgba(201,168,76,0.4);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--bright);pointer-events:none;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,0.5);}font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
   .icon-ctr:hover{background:rgba(255,255,255,0.08);}
+  .icon-ctr{font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
   .icon-ctr-blank{width:24px;height:24px;flex-shrink:0;}
   .acc-wd4-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:14px;padding:2px 7px;cursor:pointer;line-height:1;transition:all 0.2s;flex-shrink:0;opacity:0.28;filter:grayscale(1);}
   .acc-wd4-btn.done{opacity:1;filter:none;background:rgba(78,207,122,0.15);border-color:rgba(78,207,122,0.55);box-shadow:0 0 7px rgba(78,207,122,0.22);}
@@ -539,8 +540,8 @@ function renderCharTabs(){
 }
 
 // ---- 우선순위 할일 (링크시스템 통합) ----
-const LINK_COLORS=['rgba(224,85,85,0.18)','rgba(160,106,240,0.18)','rgba(78,207,122,0.18)','rgba(224,120,85,0.18)','rgba(85,200,224,0.18)','rgba(201,168,76,0.18)','rgba(224,85,160,0.18)'];
-const LINK_BORDER=['rgba(224,85,85,0.45)','rgba(160,106,240,0.45)','rgba(78,207,122,0.45)','rgba(224,120,85,0.45)','rgba(85,200,224,0.45)','rgba(201,168,76,0.45)','rgba(224,85,160,0.45)'];
+const LINK_COLORS=['rgba(224,85,85,0.05)','rgba(160,106,240,0.05)','rgba(78,207,122,0.05)','rgba(224,120,85,0.05)','rgba(85,200,224,0.05)','rgba(201,168,76,0.05)','rgba(224,85,160,0.05)'];
+const LINK_BORDER=['rgba(224,85,85,0.18)','rgba(160,106,240,0.18)','rgba(78,207,122,0.18)','rgba(224,120,85,0.18)','rgba(85,200,224,0.18)','rgba(201,168,76,0.18)','rgba(224,85,160,0.18)'];
 
 function ensureTodos(){if(!data.todos)data.todos=[];}
 
@@ -651,6 +652,23 @@ window._editCtr=(ai,ci,key,max,el)=>{
   el.replaceWith(wrap);
   input.focus();input.select();
 };
+// 캐릭터명 툴팁
+(function(){
+  let tip=null;
+  window._showTipEl=function(el){
+    window._hideTip();
+    const text=el.getAttribute('data-tip');
+    if(!text)return;
+    tip=document.createElement('div');
+    tip.className='char-tip';
+    tip.textContent=text;
+    document.body.appendChild(tip);
+    const r=el.getBoundingClientRect();
+    tip.style.left=Math.min(r.left,window.innerWidth-tip.offsetWidth-8)+'px';
+    tip.style.top=(r.top-28)+'px';
+  };
+  window._hideTip=function(){if(tip){tip.remove();tip=null;}};
+})();
 window._toggleAccWd4=(ai)=>{
   data.accounts[ai].wd4=!data.accounts[ai].wd4;
   save();renderTotalView();
@@ -672,7 +690,6 @@ function renderTotalView(){
   const main=document.getElementById('main-content');
   let html='';
   data.accounts.forEach((acc,ai)=>{
-    const ad=acc.chars.reduce((s,c)=>s+getProgress(c),0),am=acc.chars.length*TOTAL;
     const wd4Done=!!(acc.wd4);
     const allEnergyBtns=ai===0?`
       <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
@@ -682,29 +699,34 @@ function renderTotalView(){
     html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><button class="acc-wd4-btn${wd4Done?' done':''}" onclick="window._toggleAccWd4(${ai})" title="오드에너지 구매">🛒</button>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
-      const icons={dr1:'😈',dr2:'🌀',dr5:'💀',wd1:'⚔️',wd4:'🛒'};
+      const icons={dr1:'😈',dr2:'🌀',dr5:'💀',wd1:'⚔️'};
       const taskHtml=TASKS.map(t=>{
-        if(t.type==='counter')return ''; // 별도 셀로 표시
-        if(t.id==='wd4')return ''; // 계정 단위로 이동
-        if(t.type==='energy'){const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';return `<div class="icon-energy ${ecls}" data-ai="${ai}" data-ci="${ci}" title="클릭해서 수정" onclick="window._editEnergy(${ai},${ci},this)">${energy>=840?'MAX':energy}</div>`;}
+        if(t.type==='counter'||t.id==='wd4')return '';
+        if(t.type==='energy'){
+          const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';
+          return '<div class="icon-energy '+ecls+'" data-ai="'+ai+'" data-ci="'+ci+'" onclick="window._editEnergy('+ai+','+ci+',this)">'+(energy>=840?'MAX':energy)+'</div>';
+        }
         const done=!!(ch.state&&ch.state[t.id]);
-        return `<div class="icon-task${done?' done':''}" title="${t.name}" onclick="window._tt(${ai},${ci},'${t.id}')">${icons[t.id]||'•'}</div>`;
+        return '<div class="icon-task'+(done?' done':'')+'" onclick="window._tt('+ai+','+ci+',\''+t.id+'\')">'+(icons[t.id]||'•')+'</div>';
       }).join('');
       const cq=(ch.state&&ch.state['conquest']!==undefined)?ch.state['conquest']:35;
       const tr=(ch.state&&ch.state['transcend']!==undefined)?ch.state['transcend']:28;
-      const cqCls=cq<=0?'ctr-zero':cq<=10?'ctr-low':'';
-      const trCls=tr<=0?'ctr-zero':tr<=8?'ctr-low':'';
       const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
-      const cpTag=ch.cp?`<span style="font-size:9px;font-weight:700;color:${cpColor(ch.cp)};margin-right:3px;">${ch.cp}</span>`:'';
-      const linkIdx=(data.todos||[]).findIndex(td=>(td.chars||[]).includes(`${ai}-${ci}`));
-      const rowBg=linkIdx>=0?`background:${LINK_COLORS[linkIdx%LINK_COLORS.length]};border-color:${LINK_BORDER[linkIdx%LINK_BORDER.length]};`:'';
+      const cpTag=ch.cp?'<span style="font-size:9px;font-weight:700;color:'+cpColor(ch.cp)+';margin-right:3px;">'+ch.cp+'</span>':'';
+      const todoMatch=(data.todos||[]).find(td=>(td.chars||[]).includes(ai+'-'+ci));
+      const todoTip=todoMatch&&todoMatch.text?todoMatch.text:'';
+      const tipAttr=todoTip?'data-tip="'+todoTip.replace(/"/g,'&quot;')+'" onmouseenter="window._showTipEl(this)" onmouseleave="window._hideTip()" ontouchstart="window._showTipEl(this);event.stopPropagation();" ontouchend="setTimeout(window._hideTip,1800)"':'';
+      const nameSpan='<span style="color:'+nameColor+';font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(ch.cp?'34px':'44px')+';cursor:'+(todoTip?'pointer':'default')+';" '+tipAttr+'>'+ch.name+'</span>';
+      const linkIdx=(data.todos||[]).findIndex(td=>(td.chars||[]).includes(ai+'-'+ci));
+      const rowBg=linkIdx>=0?'background:'+LINK_COLORS[linkIdx%LINK_COLORS.length]+';border-color:'+LINK_BORDER[linkIdx%LINK_BORDER.length]+';':'';
       const showCtr=ch.showCtr!==false;
       const ctrHtml=showCtr
-        ?`<div class="icon-ctr" style="margin-left:4px;" data-ai="${ai}" data-ci="${ci}" data-key="conquest" onclick="window._editCtr(${ai},${ci},'conquest',35,this)">${cq}</div><div class="icon-ctr" style="margin-left:2px;" data-ai="${ai}" data-ci="${ci}" data-key="transcend" onclick="window._editCtr(${ai},${ci},'transcend',28,this)">${tr}</div>`
-        :`<div style="width:24px;flex-shrink:0;margin-left:4px;"></div><div style="width:24px;flex-shrink:0;margin-left:2px;"></div>`;
-      html+=`<div class="icon-char-row" style="${rowBg}"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">${cpTag}<span style="color:${nameColor};font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:${ch.cp?'34px':'44px'};">${ch.name}</span></div><div class="icon-tasks">${taskHtml}</div>${ctrHtml}<input class="total-memo" type="text" maxlength="20" placeholder="메모" value="${(ch.totalMemo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" data-ci="${ci}" onclick="event.stopPropagation()"></div>`;
+        ?'<div class="icon-ctr" style="margin-left:4px;" data-ai="'+ai+'" data-ci="'+ci+'" data-key="conquest" onclick="window._editCtr('+ai+','+ci+',\'conquest\',35,this)">'+cq+'</div><div class="icon-ctr" style="margin-left:2px;" data-ai="'+ai+'" data-ci="'+ci+'" data-key="transcend" onclick="window._editCtr('+ai+','+ci+',\'transcend\',28,this)">'+tr+'</div>'
+        :'<div style="width:24px;flex-shrink:0;margin-left:4px;"></div><div style="width:24px;flex-shrink:0;margin-left:2px;"></div>';
+      const memoVal=(ch.totalMemo||'').replace(/"/g,'&quot;');
+      html+='<div class="icon-char-row" style="'+rowBg+'"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">'+cpTag+nameSpan+'</div><div class="icon-tasks">'+taskHtml+'</div>'+ctrHtml+'<input class="total-memo" type="text" maxlength="20" placeholder="메모" value="'+memoVal+'" data-ai="'+ai+'" data-ci="'+ci+'" onclick="event.stopPropagation()"></div>';
     });
-    html+=`</div>`;
+    html+='</div>';
   });
   html+=renderTodoSection();
   main.innerHTML=html;
@@ -959,7 +981,7 @@ window._editEnergy=(ai,ci,el)=>{
   }
 
   let confirmed=false;
-  function confirm(){
+  function commitEnergy(){
     if(confirmed)return;confirmed=true;
     const v=Math.max(0,Math.min(840,parseInt(input.value)||0));
     pushEnergyHistoryTotal(ai,ci,cur);
@@ -994,7 +1016,7 @@ window._editEnergy=(ai,ci,el)=>{
   el.replaceWith(wrap);
   input.focus();input.select();
 
-  input.addEventListener('blur',confirm);
+  input.addEventListener('blur',commitEnergy);
   input.addEventListener('keydown',e=>{
     if(e.key==='Enter'){input.blur();}
     if(e.key==='Escape'){confirmed=true;restoreCell(cur);}
