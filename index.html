@@ -148,7 +148,7 @@
   .add-link-btn:hover{color:var(--gold);border-color:rgba(201,168,76,0.5);}
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
-  .char-tip{position:fixed;z-index:9999;background:#1a2535;border:1px solid rgba(201,168,76,0.4);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--bright);pointer-events:none;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,0.5);}font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
+  .char-tip{position:fixed;z-index:9999;background:#1a2535;border:1px solid rgba(201,168,76,0.4);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--bright);pointer-events:none;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,0.5);}
   .icon-ctr:hover{background:rgba(255,255,255,0.08);}
   .icon-ctr{font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
   .icon-ctr-blank{width:24px;height:24px;flex-shrink:0;}
@@ -199,12 +199,18 @@ if('serviceWorker' in navigator){
   <div class="header-inner">
     <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank">
       <div class="logo-icon">⚔️</div>
-      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v70</span></div></div>
+      <div><div class="logo-text">AION II</div><div class="logo-sub">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v1.0</span></div></div>
     </a>
-    <button id="memo-toggle-btn" onclick="toggleMemo()" style="position:absolute;left:50%;transform:translateX(-50%);background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
-      <span style="font-size:18px;">🔄</span>
-      <span style="font-size:9px;color:var(--muted);font-family:inherit;">공략집</span>
-    </button>
+    <div style="position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:6px;">
+      <button id="memo-toggle-btn" onclick="toggleMemo()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
+        <span style="font-size:18px;">🔄</span>
+        <span style="font-size:9px;color:var(--muted);font-family:inherit;">공략집</span>
+      </button>
+      <button id="od-toggle-btn" onclick="toggleOdPanel()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
+        <span style="font-size:18px;">⚡</span>
+        <span style="font-size:9px;color:var(--muted);font-family:inherit;">오드</span>
+      </button>
+    </div>
     <div class="header-date"><div id="today-date">--</div><div id="charge-time-label" style="color:var(--gold);font-size:10px;">최근 충전 --:--</div></div>
   </div>
 </header>
@@ -212,7 +218,36 @@ if('serviceWorker' in navigator){
 <div class="char-tab-bar"><div class="char-tab-inner" id="char-tabs"></div></div>
 <main class="main" id="main-content"></main>
 
-<!-- 공략집 메모장 화면 -->
+<!-- 오드 현황 패널 -->
+<style>
+  #od-panel{display:none;position:fixed;top:80px;left:0;right:0;bottom:0;z-index:200;overflow-y:auto;background:var(--bg);padding:8px 6px 80px;}
+  #od-grid{display:flex;gap:4px;align-items:flex-start;}
+  .od-col{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+  .od-col-title{font-size:10px;font-weight:700;color:var(--gold);padding:2px 4px 5px;letter-spacing:1px;}
+  /* 토탈창 icon-char-row 그대로 재사용, 단 태스크 아이콘 없음 */
+  .od-char-row{display:flex;align-items:center;gap:3px;padding:3px 5px;background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:6px;min-height:0;}
+  .od-char-nm{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
+  .od-en{font-size:9px;font-weight:700;color:var(--muted);width:30px;height:22px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;}
+  .od-en.e-mid{color:#4a9edd;border-color:rgba(74,158,221,0.4);background:rgba(74,158,221,0.08);}
+  .od-en.e-high{color:#c9a84c;border-color:rgba(201,168,76,0.5);background:rgba(201,168,76,0.1);}
+  .od-en.e-max{color:#4ecf7a;border-color:rgba(78,207,122,0.6);background:rgba(78,207,122,0.12);}
+  .od-dn{background:none;border:none;color:rgba(201,168,76,0.4);font-size:8px;cursor:pointer;padding:0;line-height:1;flex-shrink:0;}
+  .od-dn:hover{color:var(--gold);}
+  .od-n{font-size:9px;font-weight:700;color:var(--muted);width:22px;height:22px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;}
+  .od-n:hover{background:rgba(255,255,255,0.08);}
+  .od-inp-e{width:30px;height:22px;font-size:9px;font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(201,168,76,0.5);border-radius:5px;outline:none;color:var(--bright);text-align:center;font-family:inherit;padding:0;flex-shrink:0;}
+  .od-inp-n{width:22px;height:22px;font-size:9px;font-weight:700;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.3);border-radius:5px;outline:none;color:var(--bright);text-align:center;font-family:inherit;padding:0;flex-shrink:0;}
+</style>
+<div id="od-panel">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;">⚡ 오드 / 정복 / 초월</span>
+      <button id="od-ctr-toggle" onclick="window._toggleOdCtr()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:var(--muted);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">정복·초월 숨기기</button>
+    </div>
+    <button onclick="toggleOdPanel()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
+  </div>
+  <div id="od-grid"></div>
+</div>
 <style>
   .memo-toolbar{display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;flex-wrap:wrap;}
   .memo-sep{width:1px;height:18px;background:rgba(255,255,255,0.1);margin:0 1px;flex-shrink:0;}
@@ -669,8 +704,76 @@ window._editCtr=(ai,ci,key,max,el)=>{
   };
   window._hideTip=function(){if(tip){tip.remove();tip=null;}};
 })();
+let isOdMode=false;
+let odCtrHidden=false;
+function toggleOdPanel(){
+  isOdMode=!isOdMode;
+  document.getElementById('od-panel').style.display=isOdMode?'block':'none';
+  const btn=document.getElementById('od-toggle-btn');
+  btn.style.borderColor=isOdMode?'rgba(201,168,76,0.5)':'rgba(255,255,255,0.1)';
+  btn.style.background=isOdMode?'rgba(201,168,76,0.1)':'none';
+  if(isOdMode)renderOdPanel();
+}
+window._toggleOdCtr=()=>{
+  odCtrHidden=!odCtrHidden;
+  const btn=document.getElementById('od-ctr-toggle');
+  if(btn){btn.textContent=odCtrHidden?'정복·초월 보이기':'정복·초월 숨기기';btn.style.borderColor=odCtrHidden?'rgba(201,168,76,0.4)':'rgba(255,255,255,0.15)';btn.style.color=odCtrHidden?'var(--gold)':'var(--muted)';}
+  renderOdPanel();
+};
+function renderOdPanel(){
+  const grid=document.getElementById('od-grid');if(!grid)return;
+  grid.innerHTML='';
+  data.accounts.forEach((acc,ai)=>{
+    const col=document.createElement('div');col.className='od-col';
+    const title=document.createElement('div');title.className='od-col-title';title.textContent=acc.name;col.appendChild(title);
+    acc.chars.forEach((ch,ci)=>{
+      const e=(ch.state&&ch.state['__energy'])||0;
+      const cq=(ch.state&&ch.state['conquest']!==undefined)?ch.state['conquest']:35;
+      const tr2=(ch.state&&ch.state['transcend']!==undefined)?ch.state['transcend']:28;
+      const showCtr=ch.showCtr!==false&&!odCtrHidden;
+      const nc=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
+      const ec=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
+      const row=document.createElement('div');row.className='od-char-row';
+      const nm=`<span class="od-char-nm" style="color:${nc};">${ch.cp?`<b style="font-size:10px;margin-right:2px;">${ch.cp}</b>`:''}${ch.name}</span>`;
+      // 정복·초월 먼저, 그 다음 오드에너지
+      const c1=showCtr?`<span class="od-n" id="od-cq-${ai}-${ci}" onclick="window._odEditN(${ai},${ci},'conquest',35,this)">${cq}</span>`:'';
+      const c2=showCtr?`<span class="od-n" id="od-tr-${ai}-${ci}" onclick="window._odEditN(${ai},${ci},'transcend',28,this)">${tr2}</span>`:'';
+      const en=`<span class="od-en${ec?' '+ec:''}" id="od-e-${ai}-${ci}" onclick="window._odEditE(${ai},${ci},this)">${e>=840?'MAX':e}</span>`;
+      const dn=`<button class="od-dn" onmousedown="event.preventDefault()" onclick="window._odEDown(${ai},${ci})">▼</button>`;
+      row.innerHTML=nm+c1+c2+en+dn;
+      col.appendChild(row);
+    });
+    grid.appendChild(col);
+  });
+}
+window._odEDown=(ai,ci)=>{
+  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
+  const v=Math.max(0,(ch.state['__energy']||0)-80);
+  ch.state['__energy']=v;save();
+  const el=document.getElementById('od-e-'+ai+'-'+ci);
+  if(el){el.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';el.className='od-en'+(ec?' '+ec:'');}
+  const te=document.querySelector(`.icon-energy[data-ai="${ai}"][data-ci="${ci}"]`);
+  if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
+};
+window._odEditE=(ai,ci,el)=>{
+  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
+  const cur=ch.state['__energy']||0;
+  const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=840;inp.value=cur;inp.className='od-inp-e';
+  el.replaceWith(inp);inp.focus();inp.select();
+  let done=false;
+  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(840,parseInt(inp.value)||0));ch.state['__energy']=v;save();const n=document.createElement('span');const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';n.className='od-en'+(ec?' '+ec:'');n.id='od-e-'+ai+'-'+ci;n.textContent=v>=840?'MAX':v;n.onclick=()=>window._odEditE(ai,ci,n);inp.replaceWith(n);}
+  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
+};
+window._odEditN=(ai,ci,key,max,el)=>{
+  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
+  const cur=(ch.state[key]!==undefined)?ch.state[key]:max;
+  const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=max;inp.value=cur;inp.className='od-inp-n';
+  el.replaceWith(inp);inp.focus();inp.select();
+  let done=false;
+  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(max,parseInt(inp.value)||0));ch.state[key]=v;save();const n=document.createElement('span');n.className='od-n';const idKey=key==='conquest'?'od-cq':'od-tr';n.id=idKey+'-'+ai+'-'+ci;n.textContent=v;n.onclick=()=>window._odEditN(ai,ci,key,max,n);inp.replaceWith(n);}
+  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
+};
 window._toggleAccWd4=(ai)=>{
-  data.accounts[ai].wd4=!data.accounts[ai].wd4;
   save();renderTotalView();
 };
 window._toggleShowCtr=(ci)=>{
