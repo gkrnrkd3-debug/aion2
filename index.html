@@ -199,11 +199,19 @@ if('serviceWorker' in navigator){
 <div class="sync-bar"><div class="sync-dot" id="sync-dot"></div><span class="sync-label" id="sync-label">연결 중...</span></div>
 <header class="header">
   <div class="header-inner">
-    <a class="logo" href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank" style="min-width:0;flex-shrink:1;overflow:hidden;">
-      <div class="logo-icon">⚔️</div>
-      <div style="min-width:0;overflow:hidden;"><div class="logo-text">AION II</div><div class="logo-sub" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">숙제 체크리스트 <span style="font-size:7px;color:rgba(255,255,255,0.2);margin-left:3px;">v1.11</span></div></div>
-    </a>
-    <div style="display:flex;gap:6px;flex-shrink:0;">
+    <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
+      <a href="https://gamebit.co.kr/aion" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
+        <span style="font-size:18px;">💰</span>
+        <span style="font-size:9px;color:var(--muted);font-family:inherit;">시세</span>
+      </a>
+      <a href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
+        <span style="font-size:18px;">🛡️</span>
+        <span style="font-size:9px;color:var(--muted);font-family:inherit;">아툴</span>
+      </a>
+      <a href="https://www.aion2war.com/season/4/total" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
+        <span style="font-size:18px;">⚔️</span>
+        <span style="font-size:9px;color:var(--muted);font-family:inherit;">전쟁</span>
+      </a>
       <button id="memo-toggle-btn" onclick="toggleMemo()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
         <span style="font-size:18px;">🔄</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">공략집</span>
@@ -741,12 +749,12 @@ body{background:var(--bg);color:var(--text);font-family:sans-serif;padding:10px 
 </style></head><body>
 <div class="hdr">
   <span class="hdr-title">⚡ 오드 / 정복 / 초월</span>
-  <button class="toggle-btn" id="ctrBtn" onclick="toggleCtr()">정복·초월 숨기기</button>
+  <button class="toggle-btn" id="ctrBtn" onclick="toggleCtr()">정복·초월 보이기</button>
 </div>
 <div id="grid"></div>
 <scr`+`ipt>
-let ctrHidden=false;
-const D=${JSON.stringify(data)};
+let ctrHidden=true;
+var D=${JSON.stringify(data)};
 function cpC(cp){if(!cp||cp<22)return'#6a7a90';if(cp<24)return'#aab8c2';if(cp<28)return'#4a9edd';if(cp<30)return'#d4b86a';if(cp<35)return'#a06af0';return'#e07855';}
 function render(){
   const grid=document.getElementById('grid');grid.innerHTML='';
@@ -843,6 +851,7 @@ window._odEditN=(ai,ci,key,max,el)=>{
   inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
 };
 window._toggleAccWd4=(ai)=>{
+  data.accounts[ai].wd4=!data.accounts[ai].wd4;
   save();renderTotalView();
 };
 window._toggleShowCtr=(ci)=>{
@@ -1550,6 +1559,12 @@ function doEnergyCharge(){
     } else {
       render();
     }
+    // 오드 패널 자동 갱신
+    if(isOdMode)renderOdPanel();
+    // 팝업 오드창 갱신
+    if(odWin&&!odWin.closed){
+      try{odWin.D=data;odWin.render();}catch(e){}
+    }
   }catch(e){console.error('doEnergyCharge error:',e);}
 }
 function scheduleEnergyUpdate(){
@@ -1586,5 +1601,6 @@ try{
   }
 }catch(e){}
 </script>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.2</div>
 </body>
 </html>
