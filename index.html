@@ -200,24 +200,24 @@ if('serviceWorker' in navigator){
 <header class="header">
   <div class="header-inner">
     <div style="display:flex;gap:6px;flex-shrink:0;align-items:center;">
-      <a href="https://gamebit.co.kr/aion" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
-        <span style="font-size:18px;">💰</span>
+      <a href="https://gamebit.co.kr/aion" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
+        <span style="font-size:18px;line-height:1;">💰</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">시세</span>
       </a>
-      <a href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
-        <span style="font-size:18px;">🛡️</span>
+      <a href="https://www.aion2tool.com/char/serverid=1016/%EC%A3%BC%EB%84%B9%EC%9D%B4" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
+        <span style="font-size:18px;line-height:1;">🛡️</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">아툴</span>
       </a>
-      <a href="https://www.aion2war.com/season/4/total" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
-        <span style="font-size:18px;">⚔️</span>
-        <span style="font-size:9px;color:var(--muted);font-family:inherit;">전쟁</span>
+      <a href="https://www.aion2war.com/season/4/total" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
+        <span style="font-size:18px;line-height:1;">🌀</span>
+        <span style="font-size:9px;color:var(--muted);font-family:inherit;">회랑</span>
       </a>
-      <button id="memo-toggle-btn" onclick="toggleMemo()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
-        <span style="font-size:18px;">🔄</span>
+      <button id="memo-toggle-btn" onclick="toggleMemo()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
+        <span style="font-size:18px;line-height:1;">🔄</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">공략집</span>
       </button>
-      <button id="od-toggle-btn" onclick="toggleOdPanel()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;transition:all 0.2s;">
-        <span style="font-size:18px;">⚡</span>
+      <button id="od-toggle-btn" onclick="toggleOdPanel()" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
+        <span style="font-size:18px;line-height:1;">⚡</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">오드</span>
       </button>
     </div>
@@ -252,7 +252,7 @@ if('serviceWorker' in navigator){
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px;">
     <div style="display:flex;align-items:center;gap:6px;">
       <span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;">⚡ 오드 / 정복 / 초월</span>
-      <button id="od-ctr-toggle" onclick="window._toggleOdCtr()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:var(--muted);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">정복·초월 숨기기</button>
+      <button id="od-ctr-toggle" onclick="window._toggleOdCtr()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.4);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">정복·초월 보이기</button>
       <button onclick="openOdPopup()" style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;" title="별도 창으로 열기">⧉ 별도창</button>
     </div>
     <button onclick="toggleOdPanel()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
@@ -444,6 +444,7 @@ function autoReset(){
   if(savedWkTs < lastWedTs || dataPredatesReset){
     data.accounts.forEach(acc=>{
       acc.wd4=false;
+      acc.daily=false;
       acc.chars.forEach(ch=>{
         WEEKLY_IDS.filter(id=>id!=='wd4').forEach(id=>{ch.state[id]=false;});
         if(!ch.state)ch.state={};
@@ -715,7 +716,7 @@ window._editCtr=(ai,ci,key,max,el)=>{
   };
   window._hideTip=function(){if(tip){tip.remove();tip=null;}};
 })();
-let isOdMode=false,odWin=null,odCtrHidden=false;
+let isOdMode=false,odWin=null,odCtrHidden=true;
 function toggleOdPanel(){
   isOdMode=!isOdMode;
   document.getElementById('od-panel').style.display=isOdMode?'block':'none';
@@ -854,6 +855,10 @@ window._toggleAccWd4=(ai)=>{
   data.accounts[ai].wd4=!data.accounts[ai].wd4;
   save();renderTotalView();
 };
+window._toggleAccDaily=(ai)=>{
+  data.accounts[ai].daily=!data.accounts[ai].daily;
+  save();renderTotalView();
+};
 window._toggleShowCtr=(ci)=>{
   const ch=data.accounts[curAcc].chars[ci];
   ch.showCtr=(ch.showCtr===false)?true:false;
@@ -872,17 +877,19 @@ function renderTotalView(){
   let html='';
   data.accounts.forEach((acc,ai)=>{
     const wd4Done=!!(acc.wd4);
+    const dailyDone=!!(acc.daily);
     const allEnergyBtns=ai===0?`
       <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
         <button onclick="window._allEnergy(-15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">−15</button>
         <button onclick="window._allEnergy(15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">+15</button>
       </div>`:'';
-    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><button class="acc-wd4-btn${wd4Done?' done':''}" onclick="window._toggleAccWd4(${ai})" title="오드에너지 구매">🛒</button>${allEnergyBtns}</div>`;
+    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><button class="acc-wd4-btn${wd4Done?' done':''}" onclick="window._toggleAccWd4(${ai})" title="오드에너지 구매">🛒</button><button class="acc-wd4-btn${dailyDone?' done':''}" onclick="window._toggleAccDaily(${ai})" title="일일던전">🗝️</button>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'😈',dr2:'🌀',dr5:'💀',wd1:'⚔️'};
       const taskHtml=TASKS.map(t=>{
         if(t.type==='counter'||t.id==='wd4')return '';
+        if(t.id==='dr2'&&(!ch.cp||ch.cp<27))return '<div class="icon-task" style="visibility:hidden;"></div>';
         if(t.type==='energy'){
           const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';
           return '<div class="icon-energy '+ecls+'" data-ai="'+ai+'" data-ci="'+ci+'" onclick="window._editEnergy('+ai+','+ci+',this)">'+(energy>=840?'MAX':energy)+'</div>';
@@ -1601,6 +1608,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.2</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.21</div>
 </body>
 </html>
