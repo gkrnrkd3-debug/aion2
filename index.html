@@ -889,7 +889,7 @@ function renderTotalView(){
       const icons={dr1:'😈',dr2:'🌀',dr5:'💀',wd1:'⚔️'};
       const taskHtml=TASKS.map(t=>{
         if(t.type==='counter'||t.id==='wd4')return '';
-        if(t.id==='dr2'&&(!ch.cp||ch.cp<27))return '<div class="icon-task" style="visibility:hidden;"></div>';
+        if((t.id==='dr1'||t.id==='dr2')&&(!ch.cp||ch.cp<27))return '<div class="icon-task" style="visibility:hidden;"></div>';
         if(t.type==='energy'){
           const ecls=energy>=840?'e-max':energy>=700?'e-high':energy>=600?'e-mid':'';
           return '<div class="icon-energy '+ecls+'" data-ai="'+ai+'" data-ci="'+ci+'" onclick="window._editEnergy('+ai+','+ci+',this)">'+(energy>=840?'MAX':energy)+'</div>';
@@ -1608,6 +1608,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.21</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.22</div>
 </body>
 </html>
