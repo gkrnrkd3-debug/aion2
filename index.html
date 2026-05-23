@@ -803,7 +803,10 @@ function renderOdPanel(){
   grid.innerHTML='';
   data.accounts.forEach((acc,ai)=>{
     const col=document.createElement('div');col.className='od-col';
-    const title=document.createElement('div');title.className='od-col-title';title.textContent=acc.name;col.appendChild(title);
+    const title=document.createElement('div');title.className='od-col-title';
+    title.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--gold);padding:2px 4px 5px;letter-spacing:1px;';
+    title.innerHTML=`<span>${acc.name}</span><input class="od-acc-memo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" style="background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);outline:none;color:rgba(255,255,255,0.5);font-family:inherit;font-size:9px;font-weight:400;width:50px;padding:1px 2px;letter-spacing:0;">`;
+    col.appendChild(title);
     acc.chars.forEach((ch,ci)=>{
       const e=(ch.state&&ch.state['__energy'])||0;
       const cq=(ch.state&&ch.state['conquest']!==undefined)?ch.state['conquest']:35;
@@ -822,6 +825,22 @@ function renderOdPanel(){
       col.appendChild(row);
     });
     grid.appendChild(col);
+  });
+  // 메모 input 이벤트 연결
+  grid.querySelectorAll('.od-acc-memo').forEach(el=>{
+    el.addEventListener('input',e=>{
+      const ai=parseInt(e.target.dataset.ai);
+      const cleaned=e.target.value.replace(/[^0-9]/g,'');
+      if(e.target.value!==cleaned)e.target.value=cleaned;
+      data.accounts[ai].memo=cleaned;
+      save();
+      const sum=data.accounts.reduce((s,a)=>s+(parseInt(a.memo)||0),0);
+      const sumEl=document.getElementById('acc-memo-sum');
+      if(sumEl)sumEl.textContent=sum.toLocaleString();
+      const totalInp=document.querySelector('.acc-memo-input[data-ai="'+ai+'"]');
+      if(totalInp&&totalInp!==e.target)totalInp.value=cleaned;
+    });
+    el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
   });
 }
 window._odEDown=(ai,ci)=>{
@@ -878,12 +897,14 @@ function renderTotalView(){
   data.accounts.forEach((acc,ai)=>{
     const wd4Done=!!(acc.wd4);
     const dailyDone=!!(acc.daily);
+    const totalMemoSum=ai===0?data.accounts.reduce((s,a)=>s+(parseInt(a.memo)||0),0):0;
     const allEnergyBtns=ai===0?`
-      <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+      <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+        <span style="font-size:10px;color:var(--muted);font-weight:400;" id="acc-memo-sum">${totalMemoSum.toLocaleString()}</span>
         <button onclick="window._allEnergy(-15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">−15</button>
         <button onclick="window._allEnergy(15)" style="background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.35);border-radius:5px;color:var(--gold);font-size:10px;font-weight:700;padding:2px 7px;cursor:pointer;">+15</button>
       </div>`:'';
-    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" maxlength="8" placeholder="메모" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><button class="acc-wd4-btn${wd4Done?' done':''}" onclick="window._toggleAccWd4(${ai})" title="오드에너지 구매">🛒</button><button class="acc-wd4-btn${dailyDone?' done':''}" onclick="window._toggleAccDaily(${ai})" title="일일던전">🗝️</button>${allEnergyBtns}</div>`;
+    html+=`<div class="total-acc-block"><div class="total-acc-title"><span>${acc.name}</span><input class="acc-memo-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" onclick="event.stopPropagation()"><button class="acc-wd4-btn${wd4Done?' done':''}" onclick="window._toggleAccWd4(${ai})" title="오드에너지 구매">🛒</button><button class="acc-wd4-btn${dailyDone?' done':''}" onclick="window._toggleAccDaily(${ai})" title="일일던전">🗝️</button>${allEnergyBtns}</div>`;
     acc.chars.forEach((ch,ci)=>{
       const energy=(ch.state&&ch.state['__energy'])||0;
       const icons={dr1:'😈',dr2:'🌀',dr5:'💀',wd1:'⚔️'};
@@ -930,8 +951,16 @@ function renderTotalView(){
   main.querySelectorAll('.acc-memo-input').forEach(el=>{
     el.addEventListener('input',e=>{
       const ai=parseInt(e.target.dataset.ai);
-      data.accounts[ai].memo=e.target.value;
+      const cleaned=e.target.value.replace(/[^0-9]/g,'');
+      if(e.target.value!==cleaned)e.target.value=cleaned;
+      data.accounts[ai].memo=cleaned;
       save();
+      const sum=data.accounts.reduce((s,a)=>s+(parseInt(a.memo)||0),0);
+      const sumEl=document.getElementById('acc-memo-sum');
+      if(sumEl)sumEl.textContent=sum.toLocaleString();
+      // 오드창 동일 input 동기화
+      const odInp=document.querySelector('.od-acc-memo[data-ai="'+ai+'"]');
+      if(odInp&&odInp!==e.target)odInp.value=cleaned;
     });
     el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
   });
@@ -1608,6 +1637,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.22</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.25</div>
 </body>
 </html>
