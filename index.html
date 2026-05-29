@@ -208,7 +208,7 @@ if('serviceWorker' in navigator){
         <span style="font-size:18px;line-height:1;">🛡️</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">아툴</span>
       </a>
-      <a href="https://www.aion2war.com/season/4/total" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
+      <a href="https://www.aion2war.com" target="_blank" style="text-decoration:none;background:none;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 0;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all 0.2s;width:54px;box-sizing:border-box;">
         <span style="font-size:18px;line-height:1;">🌀</span>
         <span style="font-size:9px;color:var(--muted);font-family:inherit;">회랑</span>
       </a>
@@ -253,6 +253,7 @@ if('serviceWorker' in navigator){
     <div style="display:flex;align-items:center;gap:6px;">
       <span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;">⚡ 오드 / 정복 / 초월</span>
       <button id="od-ctr-toggle" onclick="window._toggleOdCtr()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.4);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">정복·초월 보이기</button>
+      <button id="od-batch-btn" onclick="window._odBatchDown()" style="background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.4);border-radius:5px;color:#e07855;font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;display:none;">일괄 ▼<span id="od-batch-cnt" style="margin-left:3px;font-weight:700;">0</span></button>
       <button onclick="openOdPopup()" style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;" title="별도 창으로 열기">⧉ 별도창</button>
     </div>
     <button onclick="toggleOdPanel()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
@@ -717,6 +718,7 @@ window._editCtr=(ai,ci,key,max,el)=>{
   window._hideTip=function(){if(tip){tip.remove();tip=null;}};
 })();
 let isOdMode=false,odWin=null,odCtrHidden=true;
+let odSelected=new Set();
 function toggleOdPanel(){
   isOdMode=!isOdMode;
   document.getElementById('od-panel').style.display=isOdMode?'block':'none';
@@ -815,13 +817,28 @@ function renderOdPanel(){
       const nc=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
       const ec=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
       const row=document.createElement('div');row.className='od-char-row';
-      const nm=`<span class="od-char-nm" style="color:${nc};">${ch.cp?`<b style="font-size:10px;margin-right:2px;">${ch.cp}</b>`:''}${ch.name}</span>`;
+      const key=ai+'-'+ci;
+      if(odSelected.has(key))row.style.cssText='border:1.5px solid var(--gold);background:rgba(201,168,76,0.08);';
+      row.dataset.key=key;
+      row.style.cursor='pointer';
+      const nm=`<span class="od-char-nm" style="color:${nc};pointer-events:none;">${ch.cp?`<b style="font-size:10px;margin-right:2px;">${ch.cp}</b>`:''}${ch.name}</span>`;
       // 정복·초월 먼저, 그 다음 오드에너지
       const c1=showCtr?`<span class="od-n" id="od-cq-${ai}-${ci}" onclick="window._odEditN(${ai},${ci},'conquest',35,this)">${cq}</span>`:'';
       const c2=showCtr?`<span class="od-n" id="od-tr-${ai}-${ci}" onclick="window._odEditN(${ai},${ci},'transcend',28,this)">${tr2}</span>`:'';
       const en=`<span class="od-en${ec?' '+ec:''}" id="od-e-${ai}-${ci}" onclick="window._odEditE(${ai},${ci},this)">${e>=840?'MAX':e}</span>`;
       const dn=`<button class="od-dn" onmousedown="event.preventDefault()" onclick="window._odEDown(${ai},${ci})">▼</button>`;
       row.innerHTML=nm+c1+c2+en+dn;
+      // 인터랙티브 요소 클릭 시 선택 토글 방지
+      row.querySelectorAll('.od-n,.od-en,.od-dn').forEach(el=>{
+        el.addEventListener('click',e=>e.stopPropagation());
+      });
+      row.addEventListener('click',()=>{
+        const k=row.dataset.key;
+        if(odSelected.has(k))odSelected.delete(k);
+        else odSelected.add(k);
+        window._updateOdBatchBtn();
+        renderOdPanel();
+      });
       col.appendChild(row);
     });
     grid.appendChild(col);
@@ -843,6 +860,30 @@ function renderOdPanel(){
     el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
   });
 }
+window._updateOdBatchBtn=()=>{
+  const btn=document.getElementById('od-batch-btn');
+  const cnt=document.getElementById('od-batch-cnt');
+  if(!btn)return;
+  if(odSelected.size>0){btn.style.display='';if(cnt)cnt.textContent=odSelected.size;}
+  else btn.style.display='none';
+};
+window._odBatchDown=()=>{
+  odSelected.forEach(k=>{
+    const [ai,ci]=k.split('-').map(Number);
+    const ch=data.accounts[ai]?.chars[ci];
+    if(!ch)return;
+    if(!ch.state)ch.state={};
+    const v=Math.max(0,(ch.state['__energy']||0)-80);
+    ch.state['__energy']=v;
+    // 토탈창 cell 갱신
+    const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
+    if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
+  });
+  save();
+  odSelected.clear();
+  window._updateOdBatchBtn();
+  renderOdPanel();
+};
 window._odEDown=(ai,ci)=>{
   const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
   const v=Math.max(0,(ch.state['__energy']||0)-80);
@@ -1637,6 +1678,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.25</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.3</div>
 </body>
 </html>
