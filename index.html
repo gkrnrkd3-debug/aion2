@@ -253,12 +253,15 @@ if('serviceWorker' in navigator){
     <div style="display:flex;align-items:center;gap:6px;">
       <span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;">⚡ 오드 / 정복 / 초월</span>
       <button id="od-ctr-toggle" onclick="window._toggleOdCtr()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.4);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">정복·초월 보이기</button>
-      <button id="od-batch-btn" onclick="window._odBatchDown()" style="background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.4);border-radius:5px;color:#e07855;font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;display:none;">일괄 ▼<span id="od-batch-cnt" style="margin-left:3px;font-weight:700;">0</span></button>
       <button onclick="openOdPopup()" style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;" title="별도 창으로 열기">⧉ 별도창</button>
     </div>
     <button onclick="toggleOdPanel()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
   </div>
   <div id="od-grid"></div>
+  <div id="od-batch-bar" style="display:none;margin-top:20px;padding:14px;background:rgba(224,85,85,0.06);border:1px solid rgba(224,85,85,0.3);border-radius:10px;display:flex;align-items:center;gap:10px;justify-content:center;">
+    <button id="od-batch-btn" onclick="window._odBatchDown()" style="flex:1;max-width:300px;background:rgba(224,85,85,0.2);border:1.5px solid rgba(224,85,85,0.6);border-radius:8px;color:#ff8866;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;letter-spacing:1px;">선택된 <span id="od-batch-cnt" style="color:#fff;">0</span>개 캐릭터 오드 −80 ▼</button>
+    <button onclick="window._odClearSel()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;padding:14px 16px;cursor:pointer;">초기화</button>
+  </div>
 </div>
 <style>
   .memo-toolbar{display:flex;align-items:center;gap:5px;padding:6px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:8px;flex-wrap:wrap;}
@@ -859,13 +862,14 @@ function renderOdPanel(){
     });
     el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
   });
+  if(window._updateOdBatchBtn)window._updateOdBatchBtn();
 }
 window._updateOdBatchBtn=()=>{
-  const btn=document.getElementById('od-batch-btn');
+  const bar=document.getElementById('od-batch-bar');
   const cnt=document.getElementById('od-batch-cnt');
-  if(!btn)return;
-  if(odSelected.size>0){btn.style.display='';if(cnt)cnt.textContent=odSelected.size;}
-  else btn.style.display='none';
+  if(!bar)return;
+  if(odSelected.size>0){bar.style.display='flex';if(cnt)cnt.textContent=odSelected.size;}
+  else bar.style.display='none';
 };
 window._odBatchDown=()=>{
   odSelected.forEach(k=>{
@@ -875,11 +879,13 @@ window._odBatchDown=()=>{
     if(!ch.state)ch.state={};
     const v=Math.max(0,(ch.state['__energy']||0)-80);
     ch.state['__energy']=v;
-    // 토탈창 cell 갱신
     const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
     if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
   });
   save();
+  renderOdPanel();
+};
+window._odClearSel=()=>{
   odSelected.clear();
   window._updateOdBatchBtn();
   renderOdPanel();
@@ -1678,6 +1684,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.3</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.31</div>
 </body>
 </html>
