@@ -258,9 +258,10 @@ if('serviceWorker' in navigator){
     <button onclick="toggleOdPanel()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
   </div>
   <div id="od-grid"></div>
-  <div id="od-batch-bar" style="display:none;margin-top:20px;padding:14px;background:rgba(224,85,85,0.06);border:1px solid rgba(224,85,85,0.3);border-radius:10px;display:flex;align-items:center;gap:10px;justify-content:center;">
-    <button id="od-batch-btn" onclick="window._odBatchDown()" style="flex:1;max-width:300px;background:rgba(224,85,85,0.2);border:1.5px solid rgba(224,85,85,0.6);border-radius:8px;color:#ff8866;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;letter-spacing:1px;">선택된 <span id="od-batch-cnt" style="color:#fff;">0</span>개 캐릭터 오드 −80 ▼</button>
-    <button onclick="window._odClearSel()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;padding:14px 16px;cursor:pointer;">초기화</button>
+  <div id="od-batch-bar" style="display:none;margin-top:20px;padding:14px;background:rgba(224,85,85,0.06);border:1px solid rgba(224,85,85,0.3);border-radius:10px;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
+    <button id="od-batch-btn" onclick="window._odBatchDown()" style="flex:1;min-width:200px;background:rgba(224,85,85,0.2);border:1.5px solid rgba(224,85,85,0.6);border-radius:8px;color:#ff8866;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;letter-spacing:1px;">선택된 <span id="od-batch-cnt" style="color:#fff;">0</span>개 캐릭터 오드 −80 ▼</button>
+    <button id="od-undo-btn" onclick="window._odUndo()" style="background:rgba(74,158,221,0.12);border:1px solid rgba(74,158,221,0.4);border-radius:8px;color:#4a9edd;font-family:inherit;font-size:12px;font-weight:600;padding:14px 14px;cursor:pointer;">↺ 되돌리기 <span id="od-undo-cnt" style="font-size:10px;opacity:0.7;">(0)</span></button>
+    <button onclick="window._odClearSel()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;padding:14px 14px;cursor:pointer;">선택해제</button>
   </div>
 </div>
 <style>
@@ -722,6 +723,7 @@ window._editCtr=(ai,ci,key,max,el)=>{
 })();
 let isOdMode=false,odWin=null,odCtrHidden=true;
 let odSelected=new Set();
+let odHistory=[]; // 최근 5회 일괄 -80 기록
 function toggleOdPanel(){
   isOdMode=!isOdMode;
   document.getElementById('od-panel').style.display=isOdMode?'block':'none';
@@ -867,20 +869,48 @@ function renderOdPanel(){
 window._updateOdBatchBtn=()=>{
   const bar=document.getElementById('od-batch-bar');
   const cnt=document.getElementById('od-batch-cnt');
+  const undoBtn=document.getElementById('od-undo-btn');
+  const undoCnt=document.getElementById('od-undo-cnt');
   if(!bar)return;
-  if(odSelected.size>0){bar.style.display='flex';if(cnt)cnt.textContent=odSelected.size;}
-  else bar.style.display='none';
+  const visible=odSelected.size>0||odHistory.length>0;
+  bar.style.display=visible?'flex':'none';
+  if(cnt)cnt.textContent=odSelected.size;
+  if(undoCnt)undoCnt.textContent='('+odHistory.length+')';
+  if(undoBtn)undoBtn.style.opacity=odHistory.length>0?'1':'0.4';
+  // 선택 0개일 때 일괄 버튼은 숨김
+  const batchBtn=document.getElementById('od-batch-btn');
+  if(batchBtn)batchBtn.style.display=odSelected.size>0?'':'none';
 };
 window._odBatchDown=()=>{
+  if(odSelected.size===0)return;
+  const snapshot=[];
   odSelected.forEach(k=>{
     const [ai,ci]=k.split('-').map(Number);
     const ch=data.accounts[ai]?.chars[ci];
     if(!ch)return;
     if(!ch.state)ch.state={};
-    const v=Math.max(0,(ch.state['__energy']||0)-80);
+    const prev=ch.state['__energy']||0;
+    snapshot.push({ai,ci,prev});
+    const v=Math.max(0,prev-80);
     ch.state['__energy']=v;
     const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
     if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
+  });
+  odHistory.push(snapshot);
+  if(odHistory.length>5)odHistory.shift();
+  save();
+  renderOdPanel();
+};
+window._odUndo=()=>{
+  const last=odHistory.pop();
+  if(!last)return;
+  last.forEach(item=>{
+    const ch=data.accounts[item.ai]?.chars[item.ci];
+    if(!ch)return;
+    if(!ch.state)ch.state={};
+    ch.state['__energy']=item.prev;
+    const te=document.querySelector('.icon-energy[data-ai="'+item.ai+'"][data-ci="'+item.ci+'"]');
+    if(te){const v=item.prev;te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
   });
   save();
   renderOdPanel();
@@ -1684,6 +1714,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.31</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.32</div>
 </body>
 </html>
