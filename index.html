@@ -396,6 +396,14 @@ function save(){
     catch(e){setSyncStatus('');}
   },1000);
 }
+function saveNow(){
+  try{autoReset();}catch(e){}
+  data.savedAt=Date.now();
+  lsSet('aion2-local',JSON.stringify(data));
+  clearTimeout(saveTimer);
+  setSyncStatus('syncing');
+  fbSet(data).then(()=>setSyncStatus('online')).catch(()=>setSyncStatus(''));
+}
 
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
@@ -794,7 +802,7 @@ render();
 }
 window._odSync=(ai,ci,v)=>{
   if(data.accounts[ai]&&data.accounts[ai].chars[ci]){
-    data.accounts[ai].chars[ci].state.__energy=v;save();
+    data.accounts[ai].chars[ci].state.__energy=v;saveNow();
     const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
     if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
   }
@@ -898,7 +906,7 @@ window._odBatchDown=()=>{
   });
   odHistory.push(snapshot);
   if(odHistory.length>5)odHistory.shift();
-  save();
+  saveNow();
   renderOdPanel();
 };
 window._odUndo=()=>{
@@ -912,7 +920,7 @@ window._odUndo=()=>{
     const te=document.querySelector('.icon-energy[data-ai="'+item.ai+'"][data-ci="'+item.ci+'"]');
     if(te){const v=item.prev;te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
   });
-  save();
+  saveNow();
   renderOdPanel();
 };
 window._odClearSel=()=>{
@@ -923,7 +931,7 @@ window._odClearSel=()=>{
 window._odEDown=(ai,ci)=>{
   const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
   const v=Math.max(0,(ch.state['__energy']||0)-80);
-  ch.state['__energy']=v;save();
+  ch.state['__energy']=v;saveNow();
   const el=document.getElementById('od-e-'+ai+'-'+ci);
   if(el){el.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';el.className='od-en'+(ec?' '+ec:'');}
   const te=document.querySelector(`.icon-energy[data-ai="${ai}"][data-ci="${ci}"]`);
@@ -935,7 +943,7 @@ window._odEditE=(ai,ci,el)=>{
   const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=840;inp.value=cur;inp.className='od-inp-e';
   el.replaceWith(inp);inp.focus();inp.select();
   let done=false;
-  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(840,parseInt(inp.value)||0));ch.state['__energy']=v;save();const n=document.createElement('span');const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';n.className='od-en'+(ec?' '+ec:'');n.id='od-e-'+ai+'-'+ci;n.textContent=v>=840?'MAX':v;n.onclick=()=>window._odEditE(ai,ci,n);inp.replaceWith(n);}
+  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(840,parseInt(inp.value)||0));ch.state['__energy']=v;saveNow();const n=document.createElement('span');const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';n.className='od-en'+(ec?' '+ec:'');n.id='od-e-'+ai+'-'+ci;n.textContent=v>=840?'MAX':v;n.onclick=()=>window._odEditE(ai,ci,n);inp.replaceWith(n);}
   inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
 };
 window._odEditN=(ai,ci,key,max,el)=>{
@@ -944,7 +952,7 @@ window._odEditN=(ai,ci,key,max,el)=>{
   const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=max;inp.value=cur;inp.className='od-inp-n';
   el.replaceWith(inp);inp.focus();inp.select();
   let done=false;
-  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(max,parseInt(inp.value)||0));ch.state[key]=v;save();const n=document.createElement('span');n.className='od-n';const idKey=key==='conquest'?'od-cq':'od-tr';n.id=idKey+'-'+ai+'-'+ci;n.textContent=v;n.onclick=()=>window._odEditN(ai,ci,key,max,n);inp.replaceWith(n);}
+  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(max,parseInt(inp.value)||0));ch.state[key]=v;saveNow();const n=document.createElement('span');n.className='od-n';const idKey=key==='conquest'?'od-cq':'od-tr';n.id=idKey+'-'+ai+'-'+ci;n.textContent=v;n.onclick=()=>window._odEditN(ai,ci,key,max,n);inp.replaceWith(n);}
   inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
 };
 window._toggleAccWd4=(ai)=>{
@@ -1714,6 +1722,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.32</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.33</div>
 </body>
 </html>
