@@ -259,6 +259,10 @@ if('serviceWorker' in navigator){
   </div>
   <div id="od-grid"></div>
   <div id="od-batch-bar" style="display:none;margin-top:20px;padding:14px;background:rgba(224,85,85,0.06);border:1px solid rgba(224,85,85,0.3);border-radius:10px;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
+    <div style="width:100%;display:flex;gap:8px;justify-content:center;margin-bottom:4px;">
+      <button id="od-extra-cq" onclick="window._odToggleExtra('conquest')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--muted);font-family:inherit;font-size:11px;padding:5px 14px;cursor:pointer;">🗡 정복 -1</button>
+      <button id="od-extra-tr" onclick="window._odToggleExtra('transcend')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--muted);font-family:inherit;font-size:11px;padding:5px 14px;cursor:pointer;">✨ 초월 -1</button>
+    </div>
     <button id="od-batch-btn" onclick="window._odBatchDown()" style="flex:1;min-width:200px;background:rgba(224,85,85,0.2);border:1.5px solid rgba(224,85,85,0.6);border-radius:8px;color:#ff8866;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;letter-spacing:1px;">선택된 <span id="od-batch-cnt" style="color:#fff;">0</span>개 캐릭터 오드 −80 ▼</button>
     <button id="od-undo-btn" onclick="window._odUndo()" style="background:rgba(74,158,221,0.12);border:1px solid rgba(74,158,221,0.4);border-radius:8px;color:#4a9edd;font-family:inherit;font-size:12px;font-weight:600;padding:14px 14px;cursor:pointer;">↺ 되돌리기 <span id="od-undo-cnt" style="font-size:10px;opacity:0.7;">(0)</span></button>
     <button onclick="window._odClearSel()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;padding:14px 14px;cursor:pointer;">선택해제</button>
@@ -731,7 +735,8 @@ window._editCtr=(ai,ci,key,max,el)=>{
 })();
 let isOdMode=false,odWin=null,odCtrHidden=true;
 let odSelected=new Set();
-let odHistory=[]; // 최근 5회 일괄 -80 기록
+let odHistory=[];
+let odBatchExtra=null; // 'conquest' | 'transcend' | null
 function toggleOdPanel(){
   isOdMode=!isOdMode;
   document.getElementById('od-panel').style.display=isOdMode?'block':'none';
@@ -874,6 +879,13 @@ function renderOdPanel(){
   });
   if(window._updateOdBatchBtn)window._updateOdBatchBtn();
 }
+window._odToggleExtra=(type)=>{
+  odBatchExtra=odBatchExtra===type?null:type;
+  const cqBtn=document.getElementById('od-extra-cq');
+  const trBtn=document.getElementById('od-extra-tr');
+  if(cqBtn){const on=odBatchExtra==='conquest';cqBtn.style.background=on?'rgba(160,106,240,0.2)':'rgba(255,255,255,0.04)';cqBtn.style.borderColor=on?'rgba(160,106,240,0.6)':'rgba(255,255,255,0.15)';cqBtn.style.color=on?'#c9a4f0':'var(--muted)';}
+  if(trBtn){const on=odBatchExtra==='transcend';trBtn.style.background=on?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)';trBtn.style.borderColor=on?'rgba(201,168,76,0.6)':'rgba(255,255,255,0.15)';trBtn.style.color=on?'var(--gold)':'var(--muted)';}
+};
 window._updateOdBatchBtn=()=>{
   const bar=document.getElementById('od-batch-bar');
   const cnt=document.getElementById('od-batch-cnt');
@@ -898,11 +910,20 @@ window._odBatchDown=()=>{
     if(!ch)return;
     if(!ch.state)ch.state={};
     const prev=ch.state['__energy']||0;
-    snapshot.push({ai,ci,prev});
+    const prevCq=ch.state['conquest']!==undefined?ch.state['conquest']:35;
+    const prevTr=ch.state['transcend']!==undefined?ch.state['transcend']:28;
+    snapshot.push({ai,ci,prev,prevCq,prevTr});
     const v=Math.max(0,prev-80);
     ch.state['__energy']=v;
+    if(odBatchExtra==='conquest')ch.state['conquest']=Math.max(0,prevCq-1);
+    if(odBatchExtra==='transcend')ch.state['transcend']=Math.max(0,prevTr-1);
     const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
     if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
+    // 토탈창 ctr 갱신
+    if(odBatchExtra){
+      const ctrEl=document.querySelector('.icon-ctr[data-ai="'+ai+'"][data-ci="'+ci+'"][data-key="'+odBatchExtra+'"]');
+      if(ctrEl)ctrEl.textContent=ch.state[odBatchExtra];
+    }
   });
   odHistory.push(snapshot);
   if(odHistory.length>5)odHistory.shift();
@@ -917,6 +938,8 @@ window._odUndo=()=>{
     if(!ch)return;
     if(!ch.state)ch.state={};
     ch.state['__energy']=item.prev;
+    if(item.prevCq!==undefined)ch.state['conquest']=item.prevCq;
+    if(item.prevTr!==undefined)ch.state['transcend']=item.prevTr;
     const te=document.querySelector('.icon-energy[data-ai="'+item.ai+'"][data-ci="'+item.ci+'"]');
     if(te){const v=item.prev;te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
   });
@@ -1722,6 +1745,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.33</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.34</div>
 </body>
 </html>
