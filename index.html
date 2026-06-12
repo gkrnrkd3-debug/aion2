@@ -422,7 +422,7 @@ function autoReset(){
   lastDay.setHours(5,0,0,0);
   const lastDayTs=lastDay.getTime();
   const savedDayTs=parseInt(lsGet('aion2-day-ts')||'0');
-  if(savedDayTs < lastDayTs || (data.savedAt||0) < lastDayTs){
+  if(savedDayTs < lastDayTs && (data.savedAt||0) < lastDayTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr5'].forEach(id=>{ch.state[id]=false;})));
     lsSet('aion2-day-ts', String(lastDayTs));
     didReset=true;
@@ -440,7 +440,7 @@ function autoReset(){
   const la=lastAbyss(now)||new Date(0);
   const laTs=la.getTime();
   const savedAkTs=parseInt(lsGet('aion2-abyss-ts')||'0');
-  if(savedAkTs < laTs || (data.savedAt||0) < laTs){
+  if(savedAkTs < laTs && (data.savedAt||0) < laTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
     lsSet('aion2-abyss-ts', String(laTs));
     didReset=true;
@@ -458,7 +458,7 @@ function autoReset(){
   const lastWedTs=getLastWedAt5(now);
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
   const dataPredatesReset=(data.savedAt||0) < lastWedTs;
-  if(savedWkTs < lastWedTs || dataPredatesReset){
+  if(savedWkTs < lastWedTs && dataPredatesReset){
     data.accounts.forEach(acc=>{
       acc.wd4=false;
       acc.daily=false;
@@ -1745,6 +1745,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.34</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.35</div>
 </body>
 </html>
