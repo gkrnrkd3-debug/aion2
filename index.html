@@ -412,53 +412,53 @@ function saveNow(){
 function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
 
+// ---- 리셋 시각 계산 공통 함수 (autoReset + applyRemoteData 공유) ----
+function getLastDayReset(n){
+  const d=new Date(n);
+  if(d.getHours()<5)d.setDate(d.getDate()-1);
+  d.setHours(5,0,0,0);return d.getTime();
+}
+function getLastWeekReset(n){
+  const d=new Date(n);
+  let daysBack=(d.getDay()-3+7)%7;
+  if(daysBack===0&&d.getHours()<5)daysBack=7;
+  d.setDate(d.getDate()-daysBack);d.setHours(5,0,0,0);return d.getTime();
+}
+function getLastAbyssReset(n){
+  for(let b=0;b<=7;b++){
+    const d=new Date(n);d.setDate(d.getDate()-b);d.setHours(22,0,0,0);
+    if([3,6].includes(d.getDay())&&d.getTime()<=n)return d.getTime();
+  }
+  return 0;
+}
+
 function autoReset(){
-  const now=new Date();
+  const now=Date.now();
   let didReset=false;
 
   // 악몽던전: 매일 05:00
-  const lastDay=new Date(now);
-  if(now.getHours()<5)lastDay.setDate(lastDay.getDate()-1);
-  lastDay.setHours(5,0,0,0);
-  const lastDayTs=lastDay.getTime();
+  const lastDayTs=getLastDayReset(now);
   const savedDayTs=parseInt(lsGet('aion2-day-ts')||'0');
-  if(savedDayTs < lastDayTs && (data.savedAt||0) < lastDayTs){
-    data.accounts.forEach(acc=>acc.chars.forEach(ch=>['dr5'].forEach(id=>{ch.state[id]=false;})));
+  if(savedDayTs < lastDayTs || (data.savedAt||0) < lastDayTs){
+    data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr5']=false;}));
     lsSet('aion2-day-ts', String(lastDayTs));
     didReset=true;
   }
 
-  // 어비스 회랑: 수요일·토요일 22:00
-  function lastAbyss(n){
-    for(let b=0;b<=7;b++){
-      const d=new Date(n);
-      d.setDate(d.getDate()-b);
-      d.setHours(22,0,0,0);
-      if([3,6].includes(d.getDay())&&d<=n)return d;
-    }
-  }
-  const la=lastAbyss(now)||new Date(0);
-  const laTs=la.getTime();
+  // 어비스 회랑: 수·토 22:00
+  const laTs=getLastAbyssReset(now);
   const savedAkTs=parseInt(lsGet('aion2-abyss-ts')||'0');
-  if(savedAkTs < laTs && (data.savedAt||0) < laTs){
+  if(savedAkTs < laTs || (data.savedAt||0) < laTs){
     data.accounts.forEach(acc=>acc.chars.forEach(ch=>{ch.state['dr2']=false;}));
     lsSet('aion2-abyss-ts', String(laTs));
     didReset=true;
   }
 
-  // 주간(성역·각성전·오드구매): 수요일 05:00
-  function getLastWedAt5(n){
-    const d=new Date(n);
-    let daysBack=(d.getDay()-3+7)%7;
-    if(daysBack===0&&d.getHours()<5)daysBack=7;
-    d.setDate(d.getDate()-daysBack);
-    d.setHours(5,0,0,0);
-    return d.getTime();
-  }
-  const lastWedTs=getLastWedAt5(now);
+  // 주간(성역·각성전·오드구매·일일던전·정복·초월): 수요일 05:00
+  const lastWedTs=getLastWeekReset(now);
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
   const dataPredatesReset=(data.savedAt||0) < lastWedTs;
-  if(savedWkTs < lastWedTs && dataPredatesReset){
+  if(savedWkTs < lastWedTs || dataPredatesReset){
     data.accounts.forEach(acc=>{
       acc.wd4=false;
       acc.daily=false;
@@ -1619,13 +1619,23 @@ document.getElementById('loading').style.display='none';
 function applyRemoteData(r){
   if(!r)return;
   data=r;ensureDefaults(data);
+  // 새 기기: localStorage 리셋 타임스탬프를 data.savedAt 기준으로 동기화
+  // → savedAt 이전 리셋 시각은 "이미 완료"로 표시, 불필요한 재초기화 방지
+  if(r.savedAt){
+    const ref=r.savedAt;
+    const ldt=getLastDayReset(ref);
+    if(parseInt(lsGet('aion2-day-ts')||'0')<ldt)lsSet('aion2-day-ts',String(ldt));
+    const lwt=getLastWeekReset(ref);
+    if(parseInt(lsGet('aion2-week-ts')||'0')<lwt)lsSet('aion2-week-ts',String(lwt));
+    const lat=getLastAbyssReset(ref);
+    if(parseInt(lsGet('aion2-abyss-ts')||'0')<lat)lsSet('aion2-abyss-ts',String(lat));
+  }
   const didReset=autoReset();
   if(r.savedAt){
     lsSet('aion2-last-charge-slot',String(getLastChargeSlotAt(new Date(r.savedAt))));
   }
   applyEnergy(data);
   memos=data.memos;
-  // ★ 리셋이 발생했으면 초기화된 상태를 Firebase에도 즉시 저장
   if(didReset){
     data.savedAt=Date.now();
     lsSet('aion2-local',JSON.stringify(data));
@@ -1647,7 +1657,7 @@ fbRef.once('value', snap=>{
   // 실시간 리스너 등록 (다른 기기 변경 즉시 반영)
   fbRef.on('value', snap=>{
     const r=snap.val();
-    if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
+    if(r&&r.savedAt&&r.savedAt>data.savedAt+500){
       applyRemoteData(r,false);
       showToast('🔄 다른 기기에서 업데이트됨');
     }
@@ -1657,7 +1667,7 @@ fbRef.once('value', snap=>{
   setSyncStatus('');
   fbRef.on('value', snap=>{
     const r=snap.val();
-    if(r&&r.savedAt&&r.savedAt>data.savedAt+2000){
+    if(r&&r.savedAt&&r.savedAt>data.savedAt+500){
       applyRemoteData(r,false);
       showToast('🔄 다른 기기에서 업데이트됨');
     }
@@ -1685,11 +1695,17 @@ function updateLastChargeLabel(){
   if(el)el.textContent=`최근 충전 ${hh}:${mm}`;
 }
 function doEnergyCharge(){
-  // 자동충전은 로컬만 - Firebase 저장 안 함 (기기별 독립 계산)
   try{
     applyEnergy(data);
-    try{autoReset();}catch(e){}
-    lsSet('aion2-local',JSON.stringify(data));
+    const didReset=autoReset();
+    if(didReset){
+      // 리셋 발생 시 Firebase에도 동기화
+      data.savedAt=Date.now();
+      lsSet('aion2-local',JSON.stringify(data));
+      fbSet(data).catch(()=>{});
+    } else {
+      lsSet('aion2-local',JSON.stringify(data));
+    }
     updateLastChargeLabel();
     if(curAcc===-1){
       document.querySelectorAll('.icon-energy').forEach(el=>{
@@ -1700,15 +1716,12 @@ function doEnergyCharge(){
         el.className='icon-energy'+(ecls?' '+ecls:'');
         el.textContent=e>=840?'MAX':e;
       });
+      if(didReset)renderTotalView();
     } else {
       render();
     }
-    // 오드 패널 자동 갱신
     if(isOdMode)renderOdPanel();
-    // 팝업 오드창 갱신
-    if(odWin&&!odWin.closed){
-      try{odWin.D=data;odWin.render();}catch(e){}
-    }
+    if(odWin&&!odWin.closed){try{odWin.D=data;odWin.render();}catch(e){}}
   }catch(e){console.error('doEnergyCharge error:',e);}
 }
 function scheduleEnergyUpdate(){
@@ -1745,6 +1758,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.35</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.4</div>
 </body>
 </html>
