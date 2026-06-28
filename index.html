@@ -1699,10 +1699,10 @@ function doEnergyCharge(){
     applyEnergy(data);
     const didReset=autoReset();
     if(didReset){
-      // 리셋 발생 시 Firebase에도 동기화
-      data.savedAt=Date.now();
+      // 리셋 발생 시에도 에너지 충전 데이터는 로컬만 (덮어쓰기 방지)
+      // 리셋 상태는 다음 save() 호출 때 자연스럽게 Firebase에 올라감
       lsSet('aion2-local',JSON.stringify(data));
-      fbSet(data).catch(()=>{});
+      renderTotalView();
     } else {
       lsSet('aion2-local',JSON.stringify(data));
     }
@@ -1716,7 +1716,6 @@ function doEnergyCharge(){
         el.className='icon-energy'+(ecls?' '+ecls:'');
         el.textContent=e>=840?'MAX':e;
       });
-      if(didReset)renderTotalView();
     } else {
       render();
     }
@@ -1758,6 +1757,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.4</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.41</div>
 </body>
 </html>
