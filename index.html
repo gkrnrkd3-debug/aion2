@@ -151,9 +151,6 @@
   .total-legend span{font-size:10px;color:var(--muted);}
   .notes-section{background:var(--card);border:1px solid var(--gold-dim);border-radius:10px;padding:14px;margin-top:24px;}
   .char-tip{position:fixed;z-index:9999;background:#1a2535;border:1px solid rgba(201,168,76,0.4);border-radius:6px;padding:4px 9px;font-size:11px;color:var(--bright);pointer-events:none;white-space:nowrap;box-shadow:0 3px 12px rgba(0,0,0,0.5);}
-  .icon-ctr:hover{background:rgba(255,255,255,0.08);}
-  .icon-ctr{font-size:9px;font-weight:700;color:var(--muted);width:24px;height:24px;border-radius:5px;border:1px solid rgba(255,255,255,0.08);background:rgba(255,255,255,0.03);display:flex;align-items:center;justify-content:center;flex-shrink:0;cursor:pointer;user-select:none;}
-  .icon-ctr-blank{width:24px;height:24px;flex-shrink:0;}
   .acc-wd4-btn{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:6px;font-size:14px;padding:2px 7px;cursor:pointer;line-height:1;transition:all 0.2s;flex-shrink:0;opacity:0.28;filter:grayscale(1);}
   .acc-wd4-btn.done{opacity:1;filter:none;background:rgba(78,207,122,0.15);border-color:rgba(78,207,122,0.55);box-shadow:0 0 7px rgba(78,207,122,0.22);}
   .todo-section{margin-top:14px;padding-top:10px;border-top:1px solid var(--gold-dim);}
@@ -251,18 +248,14 @@ if('serviceWorker' in navigator){
 <div id="od-panel">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding:0 2px;">
     <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;">⚡ 오드 / 정복 / 초월</span>
-      <button id="od-ctr-toggle" onclick="window._toggleOdCtr()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(201,168,76,0.4);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">정복·초월 보이기</button>
+      <span style="font-size:11px;font-weight:700;color:var(--gold);letter-spacing:2px;">⚡ 오드</span>
+      <button id="od-cp-toggle" onclick="window._toggleOdCp()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:5px;color:var(--muted);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;">전투력 보이기</button>
       <button onclick="openOdPopup()" style="background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);border-radius:5px;color:var(--gold);font-family:inherit;font-size:10px;padding:2px 7px;cursor:pointer;" title="별도 창으로 열기">⧉ 별도창</button>
     </div>
     <button onclick="toggleOdPanel()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;padding:0 4px;">×</button>
   </div>
   <div id="od-grid"></div>
   <div id="od-batch-bar" style="display:none;margin-top:20px;padding:14px;background:rgba(224,85,85,0.06);border:1px solid rgba(224,85,85,0.3);border-radius:10px;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;">
-    <div style="width:100%;display:flex;gap:8px;justify-content:center;margin-bottom:4px;">
-      <button id="od-extra-cq" onclick="window._odToggleExtra('conquest')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--muted);font-family:inherit;font-size:11px;padding:5px 14px;cursor:pointer;">🗡 정복 -1</button>
-      <button id="od-extra-tr" onclick="window._odToggleExtra('transcend')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--muted);font-family:inherit;font-size:11px;padding:5px 14px;cursor:pointer;">✨ 초월 -1</button>
-    </div>
     <button id="od-batch-btn" onclick="window._odBatchDown()" style="flex:1;min-width:200px;background:rgba(224,85,85,0.2);border:1.5px solid rgba(224,85,85,0.6);border-radius:8px;color:#ff8866;font-family:inherit;font-size:15px;font-weight:700;padding:14px;cursor:pointer;letter-spacing:1px;">선택된 <span id="od-batch-cnt" style="color:#fff;">0</span>개 캐릭터 오드 −80 ▼</button>
     <button id="od-undo-btn" onclick="window._odUndo()" style="background:rgba(74,158,221,0.12);border:1px solid rgba(74,158,221,0.4);border-radius:8px;color:#4a9edd;font-family:inherit;font-size:12px;font-weight:600;padding:14px 14px;cursor:pointer;">↺ 되돌리기 <span id="od-undo-cnt" style="font-size:10px;opacity:0.7;">(0)</span></button>
     <button onclick="window._odClearSel()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:var(--muted);font-family:inherit;font-size:12px;font-weight:600;padding:14px 14px;cursor:pointer;">선택해제</button>
@@ -347,8 +340,6 @@ const TASKS=[
   {id:'dr5',name:'악몽 던전',desc:'몽환의 파편 획득 — 매일 2회 충전, 최대 14회',count:'2회/일'},
   {id:'wd1',name:'각성전',desc:'주간 3회 · 수요일 05:00 초기화',count:'3회/주',weekly:true},
   {id:'wd4',name:'오드에너지 구매',desc:'주간 · 수요일 05:00 초기화',count:'주간',weekly:true},
-  {id:'conquest',name:'정복',desc:'남은 클리어 횟수 · 수요일 05:00 초기화',count:'35회/주',weekly:true,type:'counter',max:35,icon:'🗡'},
-  {id:'transcend',name:'초월',desc:'남은 클리어 횟수 · 수요일 05:00 초기화',count:'28회/주',weekly:true,type:'counter',max:28,icon:'✨'},
 ];
 const DAILY_IDS=TASKS.filter(t=>!t.type&&!t.weekly).map(t=>t.id);
 const WEEKLY_IDS=TASKS.filter(t=>t.weekly).map(t=>t.id);
@@ -454,7 +445,7 @@ function autoReset(){
     didReset=true;
   }
 
-  // 주간(성역·각성전·오드구매·일일던전·정복·초월): 수요일 05:00
+  // 주간(성역·각성전·오드구매·일일던전): 수요일 05:00
   const lastWedTs=getLastWeekReset(now);
   const savedWkTs=parseInt(lsGet('aion2-week-ts')||'0');
   const dataPredatesReset=(data.savedAt||0) < lastWedTs;
@@ -465,8 +456,6 @@ function autoReset(){
       acc.chars.forEach(ch=>{
         WEEKLY_IDS.filter(id=>id!=='wd4').forEach(id=>{ch.state[id]=false;});
         if(!ch.state)ch.state={};
-        ch.state['conquest']=35;
-        ch.state['transcend']=28;
       });
     });
     lsSet('aion2-week-ts', String(lastWedTs));
@@ -539,7 +528,6 @@ function ensureDefaults(d){
   if(!d.todos)d.todos=[];
   // 구버전 단일 char → chars 배열 마이그레이션
   d.todos.forEach(t=>{if(!t.chars){t.chars=t.char?[t.char]:[];delete t.char;}});
-  if(!d.weekly)d.weekly={conquest:35,transcend:28};
 }
 function getChar(){return data.accounts[curAcc].chars[curChar];}
 function getProgress(ch){return COUNT_IDS.filter(id=>ch.state&&ch.state[id]).length;}
@@ -665,57 +653,6 @@ window._todoMove=(i,dir)=>{
   save();renderTotalView();
 };
 
-// 정복/초월 per-캐릭터 카운터
-window._ctrDown=(ai,ci,key,max,wrapEl)=>{
-  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
-  if(ch.state[key]===undefined)ch.state[key]=max;
-  const inp=wrapEl.querySelector('input');
-  const v=Math.max(0,(parseInt(inp?inp.value:ch.state[key])||0)-1);
-  if(inp)inp.value=v;
-  ch.state[key]=v;save();
-};
-window._editCtr=(ai,ci,key,max,el)=>{
-  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
-  if(ch.state[key]===undefined)ch.state[key]=max;
-  const cur=ch.state[key];
-  const wrap=document.createElement('div');
-  wrap.style.cssText=`display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;width:24px;height:24px;flex-shrink:0;${key==='conquest'?'margin-left:4px;':'margin-left:2px;'}background:rgba(255,255,255,0.03);border:1px solid rgba(201,168,76,0.4);border-radius:5px;`;
-  const input=document.createElement('input');
-  input.type='number';input.min=0;input.max=max;input.value=cur;
-  input.style.cssText='width:22px;font-size:9px;font-weight:700;background:none;border:none;outline:none;color:var(--bright);text-align:center;font-family:inherit;padding:0;';
-  const down=document.createElement('button');
-  down.textContent='▼';
-  down.style.cssText='background:none;border:none;color:var(--muted);font-size:7px;padding:0;cursor:pointer;line-height:1;width:28px;';
-
-  function restoreCell(v){
-    const newEl=document.createElement('div');
-    newEl.className='icon-ctr';
-    if(key==='conquest')newEl.style.marginLeft='4px';
-    else newEl.style.marginLeft='2px';
-    newEl.dataset.ai=ai;newEl.dataset.ci=ci;newEl.dataset.key=key;
-    newEl.textContent=v;
-    newEl.onclick=()=>window._editCtr(ai,ci,key,max,newEl);
-    wrap.replaceWith(newEl);
-  }
-  let confirmed=false;
-  function commit(){
-    if(confirmed)return;confirmed=true;
-    const v=Math.max(0,Math.min(max,parseInt(input.value)||0));
-    ch.state[key]=v;save();restoreCell(v);
-  }
-  down.addEventListener('mousedown',e=>e.preventDefault());
-  down.addEventListener('click',e=>{
-    e.stopPropagation();
-    const v=Math.max(0,(parseInt(input.value)||0)-1);
-    input.value=v;ch.state[key]=v;save();
-  });
-  input.addEventListener('blur',commit);
-  input.addEventListener('keydown',e=>{if(e.key==='Enter')input.blur();if(e.key==='Escape'){input.value=cur;input.blur();}});
-  input.addEventListener('click',e=>e.stopPropagation());
-  wrap.appendChild(input);wrap.appendChild(down);
-  el.replaceWith(wrap);
-  input.focus();input.select();
-};
 // 캐릭터명 툴팁
 (function(){
   let tip=null;
@@ -733,10 +670,68 @@ window._editCtr=(ai,ci,key,max,el)=>{
   };
   window._hideTip=function(){if(tip){tip.remove();tip=null;}};
 })();
-let isOdMode=false,odWin=null,odCtrHidden=true;
+let isOdMode=false,odWin=null,odCpHidden=true;
 let odSelected=new Set();
 let odHistory=[];
-let odBatchExtra=null; // 'conquest' | 'transcend' | null
+window._toggleOdCp=()=>{
+  odCpHidden=!odCpHidden;
+  const btn=document.getElementById('od-cp-toggle');
+  if(btn){btn.textContent=odCpHidden?'전투력 보이기':'전투력 숨기기';btn.style.borderColor=odCpHidden?'rgba(255,255,255,0.15)':'rgba(201,168,76,0.4)';btn.style.color=odCpHidden?'var(--muted)':'var(--gold)';}
+  renderOdPanel();
+};
+window._updateOdBatchBtn=()=>{
+  const bar=document.getElementById('od-batch-bar');
+  const cnt=document.getElementById('od-batch-cnt');
+  const undoBtn=document.getElementById('od-undo-btn');
+  const undoCnt=document.getElementById('od-undo-cnt');
+  if(!bar)return;
+  const visible=odSelected.size>0||odHistory.length>0;
+  bar.style.display=visible?'flex':'none';
+  if(cnt)cnt.textContent=odSelected.size;
+  if(undoCnt)undoCnt.textContent='('+odHistory.length+')';
+  if(undoBtn)undoBtn.style.opacity=odHistory.length>0?'1':'0.4';
+  const batchBtn=document.getElementById('od-batch-btn');
+  if(batchBtn)batchBtn.style.display=odSelected.size>0?'':'none';
+};
+window._odBatchDown=()=>{
+  if(odSelected.size===0)return;
+  const snapshot=[];
+  odSelected.forEach(k=>{
+    const [ai,ci]=k.split('-').map(Number);
+    const ch=data.accounts[ai]?.chars[ci];
+    if(!ch)return;
+    if(!ch.state)ch.state={};
+    const prev=ch.state['__energy']||0;
+    snapshot.push({ai,ci,prev});
+    const v=Math.max(0,prev-80);
+    ch.state['__energy']=v;
+    const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
+    if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
+  });
+  odHistory.push(snapshot);
+  if(odHistory.length>5)odHistory.shift();
+  saveNow();
+  renderOdPanel();
+};
+window._odUndo=()=>{
+  const last=odHistory.pop();
+  if(!last)return;
+  last.forEach(item=>{
+    const ch=data.accounts[item.ai]?.chars[item.ci];
+    if(!ch)return;
+    if(!ch.state)ch.state={};
+    ch.state['__energy']=item.prev;
+    const te=document.querySelector('.icon-energy[data-ai="'+item.ai+'"][data-ci="'+item.ci+'"]');
+    if(te){const v=item.prev;te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
+  });
+  saveNow();
+  renderOdPanel();
+};
+window._odClearSel=()=>{
+  odSelected.clear();
+  window._updateOdBatchBtn();
+  renderOdPanel();
+};
 function toggleOdPanel(){
   isOdMode=!isOdMode;
   document.getElementById('od-panel').style.display=isOdMode?'block':'none';
@@ -769,8 +764,8 @@ body{background:var(--bg);color:var(--text);font-family:sans-serif;padding:10px 
 #grid{display:flex;gap:4px;}
 </style></head><body>
 <div class="hdr">
-  <span class="hdr-title">⚡ 오드 / 정복 / 초월</span>
-  <button class="toggle-btn" id="ctrBtn" onclick="toggleCtr()">정복·초월 보이기</button>
+  <span class="hdr-title">⚡ 오드</span>
+  <button class="toggle-btn" id="ctrBtn" onclick="toggleCtr()">전투력 보이기</button>
 </div>
 <div id="grid"></div>
 <scr`+`ipt>
@@ -784,22 +779,18 @@ function render(){
     col.innerHTML='<div class="od-col-title">'+acc.name+'</div>';
     acc.chars.forEach(function(ch,ci){
       const e=(ch.state&&ch.state.__energy)||0;
-      const cq=(ch.state&&ch.state.conquest!==undefined)?ch.state.conquest:35;
-      const tr=(ch.state&&ch.state.transcend!==undefined)?ch.state.transcend:28;
-      const showCtr=ch.showCtr!==false&&!ctrHidden;
       const nc=ch.cp>=10?cpC(ch.cp):'var(--blue)';
       const ec=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
       const row=document.createElement('div');row.className='od-char-row';
-      const c1=showCtr?'<span class="od-n">'+cq+'</span>':'';
-      const c2=showCtr?'<span class="od-n">'+tr+'</span>':'';
-      row.innerHTML='<span class="od-char-nm" style="color:'+nc+';">'+(ch.cp?'<b style="font-size:9px;margin-right:2px;">'+ch.cp+'</b>':'')+ch.name+'</span>'+c1+c2+'<span class="od-en'+(ec?' '+ec:'')+'">'+(e>=840?'MAX':e)+'</span><button class="od-dn">&#9660;</button>';
+      const cpPfx=!ctrHidden&&ch.cp?'<b style="font-size:9px;margin-right:2px;">'+ch.cp+'</b>':'';
+      row.innerHTML='<span class="od-char-nm" style="color:'+nc+';">'+cpPfx+ch.name+'</span><span class="od-en'+(ec?' '+ec:'')+'">'+(e>=840?'MAX':e)+'</span><button class="od-dn">&#9660;</button>';
       (function(ai2,ci2,ch2){row.querySelector('.od-dn').onclick=function(){var v=Math.max(0,((ch2.state.__energy||0)-80));ch2.state.__energy=v;if(window.opener&&window.opener._odSync)window.opener._odSync(ai2,ci2,v);render();};})(ai,ci,ch);
       col.appendChild(row);
     });
     grid.appendChild(col);
   });
 }
-function toggleCtr(){ctrHidden=!ctrHidden;document.getElementById('ctrBtn').textContent=ctrHidden?'정복·초월 보이기':'정복·초월 숨기기';render();}
+function toggleCtr(){ctrHidden=!ctrHidden;document.getElementById('ctrBtn').textContent=ctrHidden?'전투력 보이기':'전투력 숨기기';render();}
 render();
 </scr`+`ipt></body></html>`);
   w.document.close();
@@ -812,172 +803,7 @@ window._odSync=(ai,ci,v)=>{
     if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
   }
 };
-window._toggleOdCtr=()=>{
-  odCtrHidden=!odCtrHidden;
-  const btn=document.getElementById('od-ctr-toggle');
-  if(btn){btn.textContent=odCtrHidden?'정복·초월 보이기':'정복·초월 숨기기';btn.style.borderColor=odCtrHidden?'rgba(201,168,76,0.4)':'rgba(255,255,255,0.15)';btn.style.color=odCtrHidden?'var(--gold)':'var(--muted)';}
-  renderOdPanel();
-};
-function renderOdPanel(){
-  const grid=document.getElementById('od-grid');if(!grid)return;
-  grid.innerHTML='';
-  data.accounts.forEach((acc,ai)=>{
-    const col=document.createElement('div');col.className='od-col';
-    const title=document.createElement('div');title.className='od-col-title';
-    title.style.cssText='display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--gold);padding:2px 4px 5px;letter-spacing:1px;';
-    title.innerHTML=`<span>${acc.name}</span><input class="od-acc-memo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0" value="${(acc.memo||'').replace(/"/g,'&quot;')}" data-ai="${ai}" style="background:none;border:none;border-bottom:1px dashed rgba(255,255,255,0.15);outline:none;color:rgba(255,255,255,0.5);font-family:inherit;font-size:9px;font-weight:400;width:50px;padding:1px 2px;letter-spacing:0;">`;
-    col.appendChild(title);
-    acc.chars.forEach((ch,ci)=>{
-      const e=(ch.state&&ch.state['__energy'])||0;
-      const cq=(ch.state&&ch.state['conquest']!==undefined)?ch.state['conquest']:35;
-      const tr2=(ch.state&&ch.state['transcend']!==undefined)?ch.state['transcend']:28;
-      const showCtr=ch.showCtr!==false&&!odCtrHidden;
-      const nc=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
-      const ec=e>=840?'e-max':e>=700?'e-high':e>=600?'e-mid':'';
-      const row=document.createElement('div');row.className='od-char-row';
-      const key=ai+'-'+ci;
-      if(odSelected.has(key))row.style.cssText='border:1.5px solid var(--gold);background:rgba(201,168,76,0.08);';
-      row.dataset.key=key;
-      row.style.cursor='pointer';
-      const nm=`<span class="od-char-nm" style="color:${nc};pointer-events:none;">${ch.cp?`<b style="font-size:10px;margin-right:2px;">${ch.cp}</b>`:''}${ch.name}</span>`;
-      // 정복·초월 먼저, 그 다음 오드에너지
-      const c1=showCtr?`<span class="od-n" id="od-cq-${ai}-${ci}" onclick="window._odEditN(${ai},${ci},'conquest',35,this)">${cq}</span>`:'';
-      const c2=showCtr?`<span class="od-n" id="od-tr-${ai}-${ci}" onclick="window._odEditN(${ai},${ci},'transcend',28,this)">${tr2}</span>`:'';
-      const en=`<span class="od-en${ec?' '+ec:''}" id="od-e-${ai}-${ci}" onclick="window._odEditE(${ai},${ci},this)">${e>=840?'MAX':e}</span>`;
-      const dn=`<button class="od-dn" onmousedown="event.preventDefault()" onclick="window._odEDown(${ai},${ci})">▼</button>`;
-      row.innerHTML=nm+c1+c2+en+dn;
-      // 인터랙티브 요소 클릭 시 선택 토글 방지
-      row.querySelectorAll('.od-n,.od-en,.od-dn').forEach(el=>{
-        el.addEventListener('click',e=>e.stopPropagation());
-      });
-      row.addEventListener('click',()=>{
-        const k=row.dataset.key;
-        if(odSelected.has(k))odSelected.delete(k);
-        else odSelected.add(k);
-        window._updateOdBatchBtn();
-        renderOdPanel();
-      });
-      col.appendChild(row);
-    });
-    grid.appendChild(col);
-  });
-  // 메모 input 이벤트 연결
-  grid.querySelectorAll('.od-acc-memo').forEach(el=>{
-    el.addEventListener('input',e=>{
-      const ai=parseInt(e.target.dataset.ai);
-      const cleaned=e.target.value.replace(/[^0-9]/g,'');
-      if(e.target.value!==cleaned)e.target.value=cleaned;
-      data.accounts[ai].memo=cleaned;
-      save();
-      const sum=data.accounts.reduce((s,a)=>s+(parseInt(a.memo)||0),0);
-      const sumEl=document.getElementById('acc-memo-sum');
-      if(sumEl)sumEl.textContent=sum.toLocaleString();
-      const totalInp=document.querySelector('.acc-memo-input[data-ai="'+ai+'"]');
-      if(totalInp&&totalInp!==e.target)totalInp.value=cleaned;
-    });
-    el.addEventListener('keydown',e=>{if(e.key==='Enter')e.target.blur();});
-  });
-  if(window._updateOdBatchBtn)window._updateOdBatchBtn();
-}
-window._odToggleExtra=(type)=>{
-  odBatchExtra=odBatchExtra===type?null:type;
-  const cqBtn=document.getElementById('od-extra-cq');
-  const trBtn=document.getElementById('od-extra-tr');
-  if(cqBtn){const on=odBatchExtra==='conquest';cqBtn.style.background=on?'rgba(160,106,240,0.2)':'rgba(255,255,255,0.04)';cqBtn.style.borderColor=on?'rgba(160,106,240,0.6)':'rgba(255,255,255,0.15)';cqBtn.style.color=on?'#c9a4f0':'var(--muted)';}
-  if(trBtn){const on=odBatchExtra==='transcend';trBtn.style.background=on?'rgba(201,168,76,0.2)':'rgba(255,255,255,0.04)';trBtn.style.borderColor=on?'rgba(201,168,76,0.6)':'rgba(255,255,255,0.15)';trBtn.style.color=on?'var(--gold)':'var(--muted)';}
-};
-window._updateOdBatchBtn=()=>{
-  const bar=document.getElementById('od-batch-bar');
-  const cnt=document.getElementById('od-batch-cnt');
-  const undoBtn=document.getElementById('od-undo-btn');
-  const undoCnt=document.getElementById('od-undo-cnt');
-  if(!bar)return;
-  const visible=odSelected.size>0||odHistory.length>0;
-  bar.style.display=visible?'flex':'none';
-  if(cnt)cnt.textContent=odSelected.size;
-  if(undoCnt)undoCnt.textContent='('+odHistory.length+')';
-  if(undoBtn)undoBtn.style.opacity=odHistory.length>0?'1':'0.4';
-  // 선택 0개일 때 일괄 버튼은 숨김
-  const batchBtn=document.getElementById('od-batch-btn');
-  if(batchBtn)batchBtn.style.display=odSelected.size>0?'':'none';
-};
-window._odBatchDown=()=>{
-  if(odSelected.size===0)return;
-  const snapshot=[];
-  odSelected.forEach(k=>{
-    const [ai,ci]=k.split('-').map(Number);
-    const ch=data.accounts[ai]?.chars[ci];
-    if(!ch)return;
-    if(!ch.state)ch.state={};
-    const prev=ch.state['__energy']||0;
-    const prevCq=ch.state['conquest']!==undefined?ch.state['conquest']:35;
-    const prevTr=ch.state['transcend']!==undefined?ch.state['transcend']:28;
-    snapshot.push({ai,ci,prev,prevCq,prevTr});
-    const v=Math.max(0,prev-80);
-    ch.state['__energy']=v;
-    if(odBatchExtra==='conquest')ch.state['conquest']=Math.max(0,prevCq-1);
-    if(odBatchExtra==='transcend')ch.state['transcend']=Math.max(0,prevTr-1);
-    const te=document.querySelector('.icon-energy[data-ai="'+ai+'"][data-ci="'+ci+'"]');
-    if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
-    // 토탈창 ctr 갱신
-    if(odBatchExtra){
-      const ctrEl=document.querySelector('.icon-ctr[data-ai="'+ai+'"][data-ci="'+ci+'"][data-key="'+odBatchExtra+'"]');
-      if(ctrEl)ctrEl.textContent=ch.state[odBatchExtra];
-    }
-  });
-  odHistory.push(snapshot);
-  if(odHistory.length>5)odHistory.shift();
-  saveNow();
-  renderOdPanel();
-};
-window._odUndo=()=>{
-  const last=odHistory.pop();
-  if(!last)return;
-  last.forEach(item=>{
-    const ch=data.accounts[item.ai]?.chars[item.ci];
-    if(!ch)return;
-    if(!ch.state)ch.state={};
-    ch.state['__energy']=item.prev;
-    if(item.prevCq!==undefined)ch.state['conquest']=item.prevCq;
-    if(item.prevTr!==undefined)ch.state['transcend']=item.prevTr;
-    const te=document.querySelector('.icon-energy[data-ai="'+item.ai+'"][data-ci="'+item.ci+'"]');
-    if(te){const v=item.prev;te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
-  });
-  saveNow();
-  renderOdPanel();
-};
-window._odClearSel=()=>{
-  odSelected.clear();
-  window._updateOdBatchBtn();
-  renderOdPanel();
-};
-window._odEDown=(ai,ci)=>{
-  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
-  const v=Math.max(0,(ch.state['__energy']||0)-80);
-  ch.state['__energy']=v;saveNow();
-  const el=document.getElementById('od-e-'+ai+'-'+ci);
-  if(el){el.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';el.className='od-en'+(ec?' '+ec:'');}
-  const te=document.querySelector(`.icon-energy[data-ai="${ai}"][data-ci="${ci}"]`);
-  if(te){te.textContent=v>=840?'MAX':v;const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';te.className='icon-energy'+(ec?' '+ec:'');}
-};
-window._odEditE=(ai,ci,el)=>{
-  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
-  const cur=ch.state['__energy']||0;
-  const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=840;inp.value=cur;inp.className='od-inp-e';
-  el.replaceWith(inp);inp.focus();inp.select();
-  let done=false;
-  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(840,parseInt(inp.value)||0));ch.state['__energy']=v;saveNow();const n=document.createElement('span');const ec=v>=840?'e-max':v>=700?'e-high':v>=600?'e-mid':'';n.className='od-en'+(ec?' '+ec:'');n.id='od-e-'+ai+'-'+ci;n.textContent=v>=840?'MAX':v;n.onclick=()=>window._odEditE(ai,ci,n);inp.replaceWith(n);}
-  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
-};
-window._odEditN=(ai,ci,key,max,el)=>{
-  const ch=data.accounts[ai].chars[ci];if(!ch.state)ch.state={};
-  const cur=(ch.state[key]!==undefined)?ch.state[key]:max;
-  const inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=max;inp.value=cur;inp.className='od-inp-n';
-  el.replaceWith(inp);inp.focus();inp.select();
-  let done=false;
-  function commit(){if(done)return;done=true;const v=Math.max(0,Math.min(max,parseInt(inp.value)||0));ch.state[key]=v;saveNow();const n=document.createElement('span');n.className='od-n';const idKey=key==='conquest'?'od-cq':'od-tr';n.id=idKey+'-'+ai+'-'+ci;n.textContent=v;n.onclick=()=>window._odEditN(ai,ci,key,max,n);inp.replaceWith(n);}
-  inp.addEventListener('blur',commit);inp.addEventListener('keydown',e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){done=true;inp.replaceWith(el);}});inp.addEventListener('click',e=>e.stopPropagation());
-};
+
 window._toggleAccWd4=(ai)=>{
   data.accounts[ai].wd4=!data.accounts[ai].wd4;
   save();renderTotalView();
@@ -986,11 +812,7 @@ window._toggleAccDaily=(ai)=>{
   data.accounts[ai].daily=!data.accounts[ai].daily;
   save();renderTotalView();
 };
-window._toggleShowCtr=(ci)=>{
-  const ch=data.accounts[curAcc].chars[ci];
-  ch.showCtr=(ch.showCtr===false)?true:false;
-  save();renderCharView();
-};
+
 window._moveChar=(ci,dir)=>{
   const acc=data.accounts[curAcc];
   const j=ci+dir;
@@ -1026,8 +848,6 @@ function renderTotalView(){
         const done=!!(ch.state&&ch.state[t.id]);
         return '<div class="icon-task'+(done?' done':'')+'" onclick="window._tt('+ai+','+ci+',\''+t.id+'\')">'+(icons[t.id]||'•')+'</div>';
       }).join('');
-      const cq=(ch.state&&ch.state['conquest']!==undefined)?ch.state['conquest']:35;
-      const tr=(ch.state&&ch.state['transcend']!==undefined)?ch.state['transcend']:28;
       const nameColor=ch.cp>=10?cpColor(ch.cp):'var(--blue)';
       const cpTag=ch.cp?'<span style="font-size:9px;font-weight:700;color:'+cpColor(ch.cp)+';margin-right:3px;">'+ch.cp+'</span>':'';
       const todoMatch=(data.todos||[]).find(td=>(td.chars||[]).includes(ai+'-'+ci));
@@ -1036,12 +856,8 @@ function renderTotalView(){
       const nameSpan='<span style="color:'+nameColor+';font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:'+(ch.cp?'34px':'44px')+';cursor:'+(todoTip?'pointer':'default')+';" '+tipAttr+'>'+ch.name+'</span>';
       const linkIdx=(data.todos||[]).findIndex(td=>(td.chars||[]).includes(ai+'-'+ci));
       const rowBg=linkIdx>=0?'background:'+LINK_COLORS[linkIdx%LINK_COLORS.length]+';border-color:'+LINK_BORDER[linkIdx%LINK_BORDER.length]+';':'';
-      const showCtr=ch.showCtr!==false;
-      const ctrHtml=showCtr
-        ?'<div class="icon-ctr" style="margin-left:4px;" data-ai="'+ai+'" data-ci="'+ci+'" data-key="conquest" onclick="window._editCtr('+ai+','+ci+',\'conquest\',35,this)">'+cq+'</div><div class="icon-ctr" style="margin-left:2px;" data-ai="'+ai+'" data-ci="'+ci+'" data-key="transcend" onclick="window._editCtr('+ai+','+ci+',\'transcend\',28,this)">'+tr+'</div>'
-        :'<div style="width:24px;flex-shrink:0;margin-left:4px;"></div><div style="width:24px;flex-shrink:0;margin-left:2px;"></div>';
       const memoVal=(ch.totalMemo||'').replace(/"/g,'&quot;');
-      html+='<div class="icon-char-row" style="'+rowBg+'"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">'+cpTag+nameSpan+'</div><div class="icon-tasks">'+taskHtml+'</div>'+ctrHtml+'<input class="total-memo" type="text" maxlength="20" placeholder="메모" value="'+memoVal+'" data-ai="'+ai+'" data-ci="'+ci+'" onclick="event.stopPropagation()"></div>';
+      html+='<div class="icon-char-row" style="'+rowBg+'"><div class="icon-char-name" style="width:46px;flex-shrink:0;display:flex;align-items:center;gap:0;">'+cpTag+nameSpan+'</div><div class="icon-tasks">'+taskHtml+'</div><input class="total-memo" type="text" maxlength="20" placeholder="메모" value="'+memoVal+'" data-ai="'+ai+'" data-ci="'+ci+'" onclick="event.stopPropagation()"></div>';
     });
     html+='</div>';
   });
@@ -1184,7 +1000,7 @@ function renderTaskListForChar(ci){
       div.className='task-item energy-item';
       div.innerHTML=`<div class="energy-bar-wrap">
         <div class="energy-label-row">
-          <div><div class="energy-name">${task.icon||'🗡'} ${task.name}${task.id==='conquest'?`<label style="margin-left:8px;font-size:10px;color:var(--muted);font-weight:400;cursor:pointer;display:inline-flex;align-items:center;gap:3px;"><input type="checkbox" ${(()=>{const ch=data.accounts[curAcc].chars[ci];return ch.showCtr!==false?'checked':'';})()}  onchange="window._toggleShowCtr(${ci})" style="width:12px;height:12px;cursor:pointer;accent-color:var(--gold);"> 토탈표시</label>`:''}</div><div class="energy-desc">${task.desc}</div></div>
+          <div><div class="energy-name">${task.icon||'🗡'} ${task.name}</div><div class="energy-desc">${task.desc}</div></div>
           <input class="energy-direct" type="number" min="0" max="${max}" value="${v}" placeholder="0~${max}"
             onchange="(()=>{const ch=data.accounts[curAcc].chars[${ci}];if(!ch.state)ch.state={};ch.state['${task.id}']=Math.max(0,Math.min(${max},parseInt(this.value)||0));save();})()"
             onclick="this.select()">
@@ -1757,6 +1573,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.41</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.5</div>
 </body>
 </html>
