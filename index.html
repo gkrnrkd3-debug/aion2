@@ -381,9 +381,10 @@ function calcEnergyCharge(stored,lastMs){
   return Math.min(840,stored+slots*15);
 }
 
+const _myDeviceId=Math.random().toString(36).slice(2);
 function save(){
   try{autoReset();}catch(e){}
-  data.savedAt=Date.now();
+  data.savedAt=Date.now();data._did=_myDeviceId;
   lsSet('aion2-local',JSON.stringify(data));
   setSyncStatus('syncing');clearTimeout(saveTimer);
   saveTimer=setTimeout(async()=>{
@@ -393,7 +394,7 @@ function save(){
 }
 function saveNow(){
   try{autoReset();}catch(e){}
-  data.savedAt=Date.now();
+  data.savedAt=Date.now();data._did=_myDeviceId;
   lsSet('aion2-local',JSON.stringify(data));
   clearTimeout(saveTimer);
   setSyncStatus('syncing');
@@ -1522,9 +1523,7 @@ function applyRemoteData(r){
   applyEnergy(data);
   memos=data.memos;
   if(didReset){
-    data.savedAt=Date.now();
-    lsSet('aion2-local',JSON.stringify(data));
-    fbSet(data).catch(()=>{});
+    save(); // 디바이스ID 포함해서 저장, 리스너가 자기 데이터 무시하게 됨
   } else {
     lsSet('aion2-local',JSON.stringify(data));
   }
@@ -1533,17 +1532,21 @@ function applyRemoteData(r){
 }
 
 // Firebase SDK 실시간 리스너
+function _shouldApply(r){
+  if(!r||!r.savedAt)return false;
+  if(r._did===_myDeviceId)return false;
+  return r.savedAt>data.savedAt||r.savedAt>localSavedAt;
+}
 fbRef.once('value', snap=>{
   const val=snap.val();
   if(val&&val.savedAt&&val.savedAt>localSavedAt){
-    applyRemoteData(val,true);
+    applyRemoteData(val);
   }
   setSyncStatus('online');
-  // 실시간 리스너 등록 (다른 기기 변경 즉시 반영)
   fbRef.on('value', snap=>{
     const r=snap.val();
-    if(r&&r.savedAt&&r.savedAt>data.savedAt+500){
-      applyRemoteData(r,false);
+    if(_shouldApply(r)){
+      applyRemoteData(r);
       showToast('🔄 다른 기기에서 업데이트됨');
     }
     setSyncStatus('online');
@@ -1552,13 +1555,39 @@ fbRef.once('value', snap=>{
   setSyncStatus('');
   fbRef.on('value', snap=>{
     const r=snap.val();
-    if(r&&r.savedAt&&r.savedAt>data.savedAt+500){
-      applyRemoteData(r,false);
+    if(_shouldApply(r)){
+      applyRemoteData(r);
       showToast('🔄 다른 기기에서 업데이트됨');
     }
     setSyncStatus('online');
   });
 });
+
+// 백그라운드 → 포그라운드 복귀 시 Firebase 강제 재조회
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible'){
+    fbRef.once('value',snap=>{
+      const r=snap.val();
+      if(_shouldApply(r)){
+        applyRemoteData(r);
+        showToast('🔄 다른 기기에서 업데이트됨');
+      }
+      setSyncStatus('online');
+    }).catch(()=>setSyncStatus(''));
+  }
+});
+
+// 30분마다 Firebase 재조회 (장시간 열어둔 경우 대비)
+setInterval(()=>{
+  fbRef.once('value',snap=>{
+    const r=snap.val();
+    if(_shouldApply(r)){
+      applyRemoteData(r);
+      showToast('🔄 다른 기기에서 업데이트됨');
+    }
+    setSyncStatus('online');
+  }).catch(()=>setSyncStatus(''));
+}, 30*60*1000);
 
 // 충전 시각(0,3,6,9,12,15,18,21시) 정각에만 에너지 업데이트
 function getLastChargeTime(){
@@ -1642,6 +1671,6 @@ try{
   }
 }catch(e){}
 </script>
-<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.51</div>
+<div style="text-align:center;padding:20px 10px 30px;font-size:9px;color:rgba(255,255,255,0.15);letter-spacing:1px;">AION II 숙제 체크리스트 · v1.53</div>
 </body>
 </html>
